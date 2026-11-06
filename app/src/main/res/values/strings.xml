@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AniLab</string>
+
+    <!-- Bottom navigation -->
+    <string name="home">Home</string>
+    <string name="latest">Latest</string>
+    <string name="categories">Categories</string>
+    <string name="search">Search</string>
+    <string name="watchlist">Watchlist</string>
+
+    <!-- Content labels -->
+    <string name="watch">Watch</string>
+    <string name="share">Share</string>
+    <string name="seasons">Seasons</string>
+    <string name="related">Related</string>
+    <string name="similar">Similar</string>
+    <string name="details">Details</string>
+    <string name="download">Download</string>
+    <string name="empty_result">Nothing here yet</string>
+    <string name="empty_result_body">Try a different title, or check your connection.</string>
+    <string name="error_generic">Something went wrong</string>
+    <string name="retry">Retry</string>
+    <string name="search_hit">%1$d results</string>
+
+    <!-- Watch list -->
+    <string name="added_to_my_list">Added to your list</string>
+    <string name="removed_from_my_list">Removed from your list</string>
+
+    <!-- Player -->
+    <string name="player_missing_title">Player not installed</string>
+    <string name="player_missing_message">This title plays in an external player. Install it, then open the episode again.</string>
+    <string name="player_install">Install player</string>
+
+    <!-- Push -->
+    <string name="fcm_default_notification_channel_id" translatable="false">anilab_default</string>
+    <string name="fcm_default_notification_channel_title">AniLab</string>
+    <string name="one_signal_app_id" translatable="false">""</string>
+
+    <!-- Accessibility -->
+    <string name="clear_text_end_icon_content_description">Clear</string>
+</resources>

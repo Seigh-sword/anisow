@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="color_primary">#FF7B5CFA</color>
+    <color name="color_accent">#FFB49BFF</color>
+    <color name="color_surface">#FF0E0E12</color>
+    <color name="color_surface_elevated">#FF17171F</color>
+    <color name="color_surface_card">#FF1E1E28</color>
+    <color name="color_chip">#FF262632</color>
+    <color name="color_on_surface">#FFF4F4F8</color>
+    <color name="color_on_surface_muted">#FF9C9CAC</color>
+    <color name="color_scrim_top">#E60E0E12</color>
+    <color name="color_scrim_bottom">#000E0E12</color>
+</resources>

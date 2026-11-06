@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="screen_margin">16dp</dimen>
+    <dimen name="card_radius">14dp</dimen>
+    <dimen name="poster_width">108dp</dimen>
+    <dimen name="poster_height">160dp</dimen>
+    <dimen name="section_spacing">24dp</dimen>
+    <dimen name="grid_spacing">8dp</dimen>
+</resources>
