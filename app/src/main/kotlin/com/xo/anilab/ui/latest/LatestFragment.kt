@@ -17,6 +17,7 @@ import com.xo.anilab.core.Resource
 import com.xo.anilab.core.setVisible
 import com.xo.anilab.core.toast
 import com.xo.anilab.data.model.Post
+import com.xo.anilab.R
 import com.xo.anilab.databinding.FragmentLatestBinding
 import com.xo.anilab.ui.common.PagingScrollListener
 import com.xo.anilab.ui.common.PostAdapter
@@ -50,6 +51,7 @@ class LatestFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.title.setText(requireArguments().getInt(ARG_TITLE, R.string.latest))
+        GradientText.apply(binding.title)
 
         adapter = PostAdapter { post ->
             startActivity(PostActivity.intent(requireContext(), post.id))
@@ -62,7 +64,6 @@ class LatestFragment : Fragment() {
             addOnScrollListener(PagingScrollListener { viewModel.loadMore() })
         }
 
-        GradientText.apply(binding.title)
 
         binding.swipeRefresh.setOnRefreshListener { viewModel.refresh() }
 

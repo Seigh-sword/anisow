@@ -18,18 +18,30 @@ fun View.setVisible(visible: Boolean, keepSpace: Boolean = false) {
 }
 
 fun View.toast(message: CharSequence?) {
+    context.toast(message)
+}
+
+fun View.toast(@StringRes message: Int) {
+    context.toast(message)
+}
+
+fun Context.toast(@StringRes message: Int) {
+    toast(getString(message))
+}
+
+/**
+ * The `CharSequence` overload is what every caller passes an API error message
+ * to; without it an `Activity` picks the unresolvable `Int` overload instead.
+ */
+fun Context.toast(message: CharSequence?) {
     if (!message.isNullOrBlank()) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 }
 
-fun View.toast(@StringRes message: Int) = toast(context.getString(message))
+fun Fragment.toast(@StringRes message: Int) = requireContext().toast(message)
 
-fun Context.toast(@StringRes message: Int) =
-    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-
-fun Fragment.toast(@StringRes message: Int) = requireView().toast(message)
-fun Fragment.toast(message: CharSequence?) = view?.toast(message)
+fun Fragment.toast(message: CharSequence?) = context?.toast(message)
 
 /**
  * Posters come from the API with mixed hosts and occasional nulls; Glide

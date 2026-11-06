@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.onesignal.OneSignal
 import com.xo.anilab.R
 import com.xo.anilab.core.NoticeController
 import com.xo.anilab.core.Resource
@@ -32,6 +33,9 @@ class HomeActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityHomeBinding
     private val viewModel: HomeViewModel by viewModels { HomeViewModel.factory() }
+
+    /** Notices get exactly one shot per process, so a refresh cannot re-show one. */
+    private var noticesChecked = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -57,6 +61,7 @@ class HomeActivity : AppCompatActivity() {
         viewModel.start()
         handleIntent(intent)
         observe()
+        startPush()
     }
 
     /**
@@ -83,6 +88,22 @@ class HomeActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         handleIntent(intent)
+    }
+
+    /**
+     * Push is optional: the app id ships empty, so a build without it has no
+     * notification code path at all. When it is set, the prompt is asked for
+     * once, after the first screen is up — the request suspends since OneSignal
+     * 5.x, so it needs a lifecycle-scoped coroutine.
+     */
+    private fun startPush() {
+        val appId = getString(R.string.one_signal_app_id)
+        if (appId.isBlank()) return
+
+        OneSignal.initWithContext(this, appId)
+        lifecycleScope.launch {
+            OneSignal.Notifications.requestPermission(false)
+        }
     }
 
     private fun showTab(itemId: Int) {

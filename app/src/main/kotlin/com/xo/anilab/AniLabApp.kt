@@ -4,7 +4,6 @@ import android.app.Application
 import com.google.firebase.FirebaseApp
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.onesignal.OneSignal
 import com.xo.anilab.di.ServiceLocator
 import timber.log.Timber
 
@@ -21,7 +20,6 @@ class AniLabApp : Application() {
         }
 
         configureFirebase()
-        startPush()
     }
 
     /**
@@ -50,17 +48,5 @@ class AniLabApp : Application() {
 
         FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(!BuildConfig.DEBUG)
         FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(!BuildConfig.DEBUG)
-    }
-
-    /**
-     * OneSignal is only started when an app id is configured; the placeholder in
-     * `strings.xml` is empty, so a build without the real id simply has no push.
-     */
-    private fun startPush() {
-        val appId = getString(R.string.one_signal_app_id)
-        if (appId.isBlank()) return
-
-        OneSignal.initWithContext(this, appId)
-        OneSignal.Notifications.requestPermission(false)
     }
 }

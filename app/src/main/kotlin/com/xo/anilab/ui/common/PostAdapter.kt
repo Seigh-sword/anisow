@@ -12,9 +12,8 @@ import com.xo.anilab.databinding.ItemPostBinding
 import com.xo.anilab.databinding.ItemPosterBinding
 
 /**
- * Poster tiles. [compact] selects the fixed-width variant used inside a home
- * section strip; the full variant fills a grid cell and keeps the age chip in
- * the corner of the artwork.
+ * The feed ships in two densities: [ItemPostBinding] for the wide lists and
+ * [ItemPosterBinding] for the poster grids used on the home rails and search.
  */
 class PostAdapter(
     private val compact: Boolean = false,
@@ -24,9 +23,9 @@ class PostAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PostViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         return if (compact) {
-            PostViewHolder.Compact(ItemPosterBinding.inflate(inflater, parent, false), onClick)
+            Compact(ItemPosterBinding.inflate(inflater, parent, false), onClick)
         } else {
-            PostViewHolder.Full(ItemPostBinding.inflate(inflater, parent, false), onClick)
+            Full(ItemPostBinding.inflate(inflater, parent, false), onClick)
         }
     }
 
