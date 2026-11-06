@@ -59,12 +59,13 @@ jobs:
           }
           tail -n 5 sdk.log
 
-      # The repository ships no Gradle wrapper, so the action provides Gradle.
-      # gradle-version must be quoted or YAML reads it as a number.
+      # The repository ships no Gradle wrapper, so the action provides Gradle:
+      # 8.14.6 is the last 8.x, which is what AGP 8.7 supports. Gradle 9 is not
+      # an option until the Android plugin moves past 8.x majors.
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: "8.11.1"
+          gradle-version: "8.14.6"
 
       - name: Write Firebase config
         if: env.GOOGLE_SERVICES_JSON != ''
