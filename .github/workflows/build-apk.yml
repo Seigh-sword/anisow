@@ -4,7 +4,9 @@ name: Build APK
 #
 # A debug APK is signed with the debug keystore the Android plugin generates, so
 # there is nothing to configure: download the artifact, install it on a phone.
-# Release signing would need a keystore secret and is deliberately left out.
+#
+# Failures are echoed as annotations (`::error::`) on purpose: annotations are
+# readable through the API, while raw job logs are not always reachable.
 
 on:
   push:
@@ -23,11 +25,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
-    # The Firebase config is per environment. Mapping the secret here (not in
-    # the step) is what lets the step's `if` read it: the secrets context is
-    # not available in a step condition.
+    # Mapped here rather than in the step so the step's `if` can read it: the
+    # secrets context is not available in a step condition.
     env:
       GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+      ANDROID_API: "35"
+      BUILD_TOOLS: "35.0.0"
 
     steps:
       - name: Checkout
@@ -39,15 +42,22 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      # AGP needs the exact platform and build tools; the runner image does not
-      # guarantee the API level this project compiles against.
-      - name: Set up Android SDK
+      - name: Set up Android SDK tools
         uses: android-actions/setup-android@v3
         with:
-          packages: |
-            platforms;android-35
-            build-tools;35.0.0
-            platform-tools
+          packages: ""
+
+      - name: Install SDK packages
+        run: |
+          set -o pipefail
+          {
+            yes | sdkmanager --licenses
+            sdkmanager --install "platforms;android-$ANDROID_API" "build-tools;$BUILD_TOOLS" "platform-tools"
+          } > sdk.log 2>&1 || {
+            tail -n 20 sdk.log | while IFS= read -r line; do echo "::error::SDK: $line"; done
+            exit 1
+          }
+          tail -n 5 sdk.log
 
       # The repository ships no Gradle wrapper, so the action provides Gradle.
       # gradle-version must be quoted or YAML reads it as a number.
@@ -61,7 +71,18 @@ jobs:
         run: printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
 
       - name: Assemble debug APK
-        run: gradle :app:assembleDebug --stacktrace
+        run: |
+          set -o pipefail
+          gradle :app:assembleDebug --stacktrace --console=plain > build.log 2>&1 || {
+            # Surface compiler errors as annotations: those are the lines worth
+            # reading, and the full log stays in the run.
+            grep -E "^e: |^w: .*(error|deprecat)|error:|FAILURE:|Caused by:" build.log \
+              | head -n 25 \
+              | while IFS= read -r line; do echo "::error::$line"; done
+            tail -n 40 build.log
+            exit 1
+          }
+          tail -n 8 build.log
 
       - name: Collect APK
         id: apk
@@ -69,7 +90,7 @@ jobs:
           set -euo pipefail
           APK="$(find app/build/outputs/apk/debug -name '*.apk' | head -n 1)"
           if [ -z "$APK" ]; then
-            echo "assembleDebug produced no APK" >&2
+            echo "::error::assembleDebug produced no APK"
             exit 1
           fi
           NAME="anilab-debug-${GITHUB_SHA::7}.apk"
@@ -86,15 +107,15 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      # Compiler output is what a failed build needs; the HTML reports add the
-      # resource and lint detail that the log truncates.
-      - name: Upload build reports
+      # The full logs are the useful artifact on a red build.
+      - name: Upload build logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: build-reports
+          name: build-logs
           path: |
+            build.log
+            sdk.log
             app/build/reports/**
-            build/reports/**
           if-no-files-found: ignore
           retention-days: 7
