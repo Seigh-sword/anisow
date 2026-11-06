@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@drawable/bg_glass"
     android:orientation="vertical"
     android:padding="@dimen/section_spacing">
 
@@ -13,9 +14,11 @@
 
         <ImageView
             android:id="@+id/icon"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_glass_circle"
             android:contentDescription="@null"
+            android:padding="10dp"
             android:src="@drawable/ic_info" />
 
         <TextView
@@ -28,8 +31,8 @@
 
         <ImageView
             android:id="@+id/close_icon"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
             android:contentDescription="@string/clear_text_end_icon_content_description"
             android:src="@drawable/ic_close" />
     </LinearLayout>
@@ -39,12 +42,17 @@
         style="@style/TextAppearance.AniLab.Body"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp" />
+        android:layout_marginTop="14dp" />
 
-    <com.google.android.material.button.MaterialButton
+    <TextView
         android:id="@+id/actionBtn"
+        style="@style/TextAppearance.AniLab.Title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="18dp"
+        android:background="@drawable/bg_gradient_brand"
+        android:gravity="center"
+        android:paddingVertical="14dp"
+        android:textColor="@color/color_on_brand"
         android:visibility="gone" />
 </LinearLayout>

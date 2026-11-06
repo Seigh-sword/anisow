@@ -1,13 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="color_primary">#FF7B5CFA</color>
-    <color name="color_accent">#FFB49BFF</color>
-    <color name="color_surface">#FF0E0E12</color>
-    <color name="color_surface_elevated">#FF17171F</color>
-    <color name="color_surface_card">#FF1E1E28</color>
-    <color name="color_chip">#FF262632</color>
-    <color name="color_on_surface">#FFF4F4F8</color>
-    <color name="color_on_surface_muted">#FF9C9CAC</color>
-    <color name="color_scrim_top">#E60E0E12</color>
-    <color name="color_scrim_bottom">#000E0E12</color>
+
+    <!-- Brand: the accent is a single gradient, sampled at both ends here so
+         text, icons and ripples always have a flat colour to fall back on. -->
+    <color name="brand_start">#FF007BFF</color>
+    <color name="brand_end">#FFFF00FF</color>
+    <color name="color_primary">#FF007BFF</color>
+    <color name="color_secondary">#FFFF00FF</color>
+    <color name="color_accent">#FFFF5CE1</color>
+
+    <!-- Base surfaces stay dark so the gradient reads as light, not paint. -->
+    <color name="color_surface">#FF0A0C12</color>
+    <color name="color_surface_card">#FF171B24</color>
+
+    <!-- Glass layers: a translucent fill plus a hairline, no blur needed. -->
+    <color name="glass_fill">#1FFFFFFF</color>
+    <color name="glass_fill_strong">#33FFFFFF</color>
+    <color name="glass_fill_dark">#B30A0C12</color>
+    <color name="glass_stroke">#40FFFFFF</color>
+    <color name="glass_stroke_strong">#66FFFFFF</color>
+
+    <color name="color_on_surface">#FFF7F9FF</color>
+    <color name="color_on_surface_muted">#FFB4BECE</color>
+    <color name="color_on_brand">#FFFFFFFF</color>
+
+    <color name="color_scrim_top">#E60A0C12</color>
+    <color name="color_scrim_bottom">#000A0C12</color>
 </resources>

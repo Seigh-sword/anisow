@@ -9,7 +9,7 @@
     <ImageView
         android:id="@+id/background"
         android:layout_width="0dp"
-        android:layout_height="360dp"
+        android:layout_height="420dp"
         android:contentDescription="@null"
         android:scaleType="centerCrop"
         app:layout_constraintEnd_toEndOf="parent"
@@ -18,7 +18,7 @@
 
     <View
         android:layout_width="0dp"
-        android:layout_height="360dp"
+        android:layout_height="420dp"
         android:background="@drawable/bg_gradient_bottom_top"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -26,15 +26,15 @@
 
     <ImageButton
         android:id="@+id/back_btn"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        style="@style/Widget.AniLab.IconButton"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
         android:layout_margin="@dimen/screen_margin"
-        android:background="@drawable/bg_chip"
-        android:contentDescription="@string/home"
-        android:padding="9dp"
+        android:contentDescription="@string/back"
         android:src="@drawable/ic_arrow_back"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/color_on_surface" />
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefresh"
@@ -56,26 +56,27 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:paddingHorizontal="@dimen/screen_margin"
-                android:paddingBottom="32dp">
+                android:paddingBottom="40dp">
 
                 <TextView
                     android:id="@+id/title"
                     style="@style/TextAppearance.AniLab.Title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="120dp" />
+                    android:layout_marginTop="180dp"
+                    android:textSize="30sp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="10dp"
                     android:orientation="horizontal">
 
                     <LinearLayout
                         android:id="@+id/score_block"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/bg_chip"
+                        android:background="@drawable/bg_glass_chip"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
                         android:paddingHorizontal="10dp"
@@ -85,14 +86,16 @@
                             android:layout_width="14dp"
                             android:layout_height="14dp"
                             android:contentDescription="@null"
-                            android:src="@drawable/ic_star" />
+                            android:src="@drawable/ic_star"
+                            app:tint="@color/color_accent" />
 
                         <TextView
                             android:id="@+id/score"
                             style="@style/TextAppearance.AniLab.Body"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="4dp" />
+                            android:layout_marginStart="4dp"
+                            android:textColor="@color/color_on_surface" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -100,7 +103,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
-                        android:background="@drawable/bg_chip"
+                        android:background="@drawable/bg_glass_chip"
                         android:paddingHorizontal="10dp"
                         android:paddingVertical="4dp">
 
@@ -108,7 +111,8 @@
                             android:id="@+id/rating"
                             style="@style/TextAppearance.AniLab.Body"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" />
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/color_on_surface" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -116,7 +120,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
-                        android:background="@drawable/bg_chip"
+                        android:background="@drawable/bg_glass_chip"
                         android:paddingHorizontal="10dp"
                         android:paddingVertical="4dp">
 
@@ -124,7 +128,8 @@
                             android:id="@+id/age"
                             style="@style/TextAppearance.AniLab.Body"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" />
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/color_on_surface" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -133,69 +138,61 @@
                     style="@style/TextAppearance.AniLab.Body"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp" />
+                    android:layout_marginTop="14dp" />
 
                 <TextView
                     android:id="@+id/overview"
                     style="@style/TextAppearance.AniLab.Body"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp" />
+                    android:layout_marginTop="12dp"
+                    android:lineSpacingExtra="4dp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
+                    android:layout_marginTop="20dp"
                     android:orientation="horizontal">
 
-                    <LinearLayout
+                    <TextView
                         android:id="@+id/watch"
+                        style="@style/TextAppearance.AniLab.Title"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:background="@drawable/bg_chip"
+                        android:background="@drawable/bg_gradient_brand"
+                        android:drawableStart="@drawable/ic_play"
+                        android:drawablePadding="8dp"
                         android:gravity="center"
-                        android:orientation="horizontal"
-                        android:paddingVertical="14dp">
-
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_play" />
-
-                        <TextView
-                            style="@style/TextAppearance.AniLab.Title"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="6dp"
-                            android:text="@string/watch" />
-                    </LinearLayout>
+                        android:paddingVertical="16dp"
+                        android:text="@string/watch"
+                        android:textColor="@color/color_on_brand" />
 
                     <LinearLayout
                         android:id="@+id/watchlist"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
                         android:layout_marginStart="8dp"
-                        android:background="@drawable/bg_chip"
+                        android:background="@drawable/bg_glass_circle"
                         android:gravity="center"
                         android:orientation="horizontal"
-                        android:paddingHorizontal="18dp">
+                        android:paddingHorizontal="20dp">
 
                         <ImageView
                             android:id="@+id/watchlistAdd"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
                             android:contentDescription="@string/watchlist"
                             android:src="@drawable/ic_heart" />
 
                         <ImageView
                             android:id="@+id/watchlistRemove"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
                             android:contentDescription="@string/watchlist"
                             android:src="@drawable/ic_heart_on"
-                            android:visibility="gone" />
+                            android:visibility="gone"
+                            app:tint="@color/color_accent" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -207,7 +204,7 @@
                     android:orientation="vertical">
 
                     <TextView
-                        style="@style/TextAppearance.AniLab.Title"
+                        style="@style/TextAppearance.AniLab.Label"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/seasons" />
@@ -216,7 +213,7 @@
                         android:id="@+id/seasonsPostList"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="10dp"
                         android:nestedScrollingEnabled="false" />
                 </LinearLayout>
 
@@ -228,7 +225,7 @@
                     android:orientation="vertical">
 
                     <TextView
-                        style="@style/TextAppearance.AniLab.Title"
+                        style="@style/TextAppearance.AniLab.Label"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/related" />
@@ -237,7 +234,7 @@
                         android:id="@+id/relatedPostList"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="10dp"
                         android:nestedScrollingEnabled="false" />
                 </LinearLayout>
 
@@ -249,7 +246,7 @@
                     android:orientation="vertical">
 
                     <TextView
-                        style="@style/TextAppearance.AniLab.Title"
+                        style="@style/TextAppearance.AniLab.Label"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/similar" />
@@ -258,58 +255,76 @@
                         android:id="@+id/similarPostList"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="10dp"
                         android:nestedScrollingEnabled="false" />
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/status"
-                    style="@style/TextAppearance.AniLab.Body"
+                <!-- Details in one glass panel. -->
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/section_spacing" />
+                    android:layout_marginTop="@dimen/section_spacing"
+                    android:background="@drawable/bg_glass"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/premiered"
-                    style="@style/TextAppearance.AniLab.Body"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    <TextView
+                        style="@style/TextAppearance.AniLab.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:text="@string/details" />
 
-                <TextView
-                    android:id="@+id/runtime"
-                    style="@style/TextAppearance.AniLab.Body"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    <TextView
+                        android:id="@+id/status"
+                        style="@style/TextAppearance.AniLab.Body"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
 
-                <TextView
-                    android:id="@+id/type"
-                    style="@style/TextAppearance.AniLab.Body"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    <TextView
+                        android:id="@+id/premiered"
+                        style="@style/TextAppearance.AniLab.Body"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <TextView
+                        android:id="@+id/runtime"
+                        style="@style/TextAppearance.AniLab.Body"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <TextView
+                        android:id="@+id/type"
+                        style="@style/TextAppearance.AniLab.Body"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/share"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:background="@drawable/bg_chip"
+                    android:background="@drawable/bg_glass_chip"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="8dp">
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="10dp">
 
                     <ImageView
                         android:layout_width="16dp"
                         android:layout_height="16dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/ic_share" />
+                        android:src="@drawable/ic_share"
+                        app:tint="@color/color_accent" />
 
                     <TextView
                         style="@style/TextAppearance.AniLab.Body"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
-                        android:text="@string/share" />
+                        android:text="@string/share"
+                        android:textColor="@color/color_on_surface" />
                 </LinearLayout>
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
@@ -320,9 +335,11 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:indeterminate="true"
+        app:indicatorColor="@color/color_accent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:trackColor="@color/glass_fill"
         app:trackThickness="3dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

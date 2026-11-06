@@ -1,11 +1,12 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.parcelize)
 }
 
-// The Firebase config is per environment and not committed; without it the
-// Google Services plugins would fail the build before compiling anything.
+// The Firebase config is per environment and not committed, so the Google
+// Services and Crashlytics plugins are only applied when it is present. CI can
+// restore the file from a secret; without it the app builds and runs, with
+// analytics, crash reporting and push switched off at runtime.
 if (file("google-services.json").exists()) {
     apply(plugin = libs.plugins.google.services.get().pluginId)
     apply(plugin = libs.plugins.firebase.crashlytics.get().pluginId)
@@ -31,6 +32,7 @@ android {
             versionNameSuffix = "-debug"
             isMinifyEnabled = false
         }
+
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -38,8 +40,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            // No release keystore in the repo; a release build is signed by the
-            // usual environment-configured signing config.
         }
     }
 
@@ -94,9 +94,9 @@ dependencies {
     implementation(libs.glide)
 
     implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
-    implementation(libs.firebase.messaging)
     implementation(libs.onesignal)
 
     implementation(libs.timber)

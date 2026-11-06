@@ -20,16 +20,18 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:paddingBottom="24dp">
+            android:paddingBottom="96dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
+                <!-- Hero: artwork with the gradient scrim and a glass action bar
+                     sitting on top of it. -->
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
-                    android:layout_height="340dp"
+                    android:layout_height="380dp"
                     android:layout_margin="@dimen/screen_margin">
 
                     <ImageView
@@ -54,12 +56,25 @@
                         app:layout_constraintTop_toTopOf="parent" />
 
                     <TextView
+                        android:id="@+id/featuredKicker"
+                        style="@style/TextAppearance.AniLab.Label"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/screen_margin"
+                        android:layout_marginBottom="6dp"
+                        android:text="@string/label_featured"
+                        app:layout_constraintBottom_toTopOf="@id/featuredTitle"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent" />
+
+                    <TextView
                         android:id="@+id/featuredTitle"
                         style="@style/TextAppearance.AniLab.Title"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginHorizontal="@dimen/screen_margin"
                         android:maxLines="2"
+                        android:textSize="28sp"
                         app:layout_constraintBottom_toTopOf="@id/featuredType"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="parent" />
@@ -92,6 +107,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginHorizontal="@dimen/screen_margin"
+                        android:layout_marginBottom="12dp"
                         android:orientation="horizontal"
                         app:layout_constraintBottom_toTopOf="@id/actions"
                         app:layout_constraintEnd_toEndOf="parent"
@@ -101,7 +117,7 @@
                             android:id="@+id/featuredScoreblock"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:background="@drawable/bg_chip"
+                            android:background="@drawable/bg_glass_chip"
                             android:gravity="center_vertical"
                             android:orientation="horizontal"
                             android:paddingHorizontal="10dp"
@@ -111,14 +127,16 @@
                                 android:layout_width="14dp"
                                 android:layout_height="14dp"
                                 android:contentDescription="@null"
-                                android:src="@drawable/ic_star" />
+                                android:src="@drawable/ic_star"
+                                app:tint="@color/color_accent" />
 
                             <TextView
                                 android:id="@+id/featuredScore"
                                 style="@style/TextAppearance.AniLab.Body"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="4dp" />
+                                android:layout_marginStart="4dp"
+                                android:textColor="@color/color_on_surface" />
                         </LinearLayout>
 
                         <LinearLayout
@@ -126,7 +144,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
-                            android:background="@drawable/bg_chip"
+                            android:background="@drawable/bg_glass_chip"
                             android:paddingHorizontal="10dp"
                             android:paddingVertical="4dp">
 
@@ -134,7 +152,8 @@
                                 android:id="@+id/featuredRating"
                                 style="@style/TextAppearance.AniLab.Body"
                                 android:layout_width="wrap_content"
-                                android:layout_height="wrap_content" />
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/color_on_surface" />
                         </LinearLayout>
 
                         <LinearLayout
@@ -142,7 +161,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
-                            android:background="@drawable/bg_chip"
+                            android:background="@drawable/bg_glass_chip"
                             android:paddingHorizontal="10dp"
                             android:paddingVertical="4dp">
 
@@ -150,7 +169,8 @@
                                 android:id="@+id/featuredAge"
                                 style="@style/TextAppearance.AniLab.Body"
                                 android:layout_width="wrap_content"
-                                android:layout_height="wrap_content" />
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/color_on_surface" />
                         </LinearLayout>
                     </LinearLayout>
 
@@ -164,62 +184,58 @@
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="parent">
 
-                        <LinearLayout
+                        <TextView
                             android:id="@+id/featuredWatch"
+                            style="@style/TextAppearance.AniLab.Title"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:background="@drawable/bg_chip"
+                            android:background="@drawable/bg_gradient_brand"
+                            android:drawableStart="@drawable/ic_play"
+                            android:drawablePadding="8dp"
                             android:gravity="center"
-                            android:paddingVertical="12dp">
-
-                            <ImageView
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:contentDescription="@null"
-                                android:src="@drawable/ic_play" />
-
-                            <TextView
-                                style="@style/TextAppearance.AniLab.Title"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
-                                android:text="@string/watch" />
-                        </LinearLayout>
+                            android:paddingVertical="14dp"
+                            android:text="@string/watch"
+                            android:textColor="@color/color_on_brand" />
 
                         <LinearLayout
                             android:id="@+id/featuredWatchlist"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            android:layout_height="match_parent"
                             android:layout_marginStart="8dp"
-                            android:background="@drawable/bg_chip"
+                            android:background="@drawable/bg_glass_circle"
                             android:gravity="center"
-                            android:paddingHorizontal="14dp"
-                            android:paddingVertical="12dp">
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="16dp">
 
                             <ImageView
                                 android:id="@+id/watchlistAdd"
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
                                 android:contentDescription="@string/watchlist"
                                 android:src="@drawable/ic_heart" />
 
                             <ImageView
                                 android:id="@+id/watchlistRemove"
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
                                 android:contentDescription="@string/watchlist"
                                 android:src="@drawable/ic_heart_on"
-                                android:visibility="gone" />
+                                android:visibility="gone"
+                                app:tint="@color/color_accent" />
                         </LinearLayout>
                     </LinearLayout>
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
+                <!-- Metadata as one glass panel rather than loose lines. -->
                 <LinearLayout
+                    android:id="@+id/metaPanel"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="@dimen/screen_margin"
+                    android:background="@drawable/bg_glass"
                     android:orientation="vertical"
-                    android:paddingHorizontal="@dimen/screen_margin">
+                    android:padding="16dp">
 
                     <TextView
                         android:id="@+id/featuredStatus"
@@ -243,9 +259,8 @@
                         android:id="@+id/featuredShare"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
                         android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_chip"
+                        android:background="@drawable/bg_glass_chip"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
                         android:paddingHorizontal="12dp"
@@ -255,14 +270,16 @@
                             android:layout_width="16dp"
                             android:layout_height="16dp"
                             android:contentDescription="@null"
-                            android:src="@drawable/ic_share" />
+                            android:src="@drawable/ic_share"
+                            app:tint="@color/color_accent" />
 
                         <TextView
                             style="@style/TextAppearance.AniLab.Body"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="6dp"
-                            android:text="@string/share" />
+                            android:text="@string/share"
+                            android:textColor="@color/color_on_surface" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -283,9 +300,11 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:indeterminate="true"
+        app:indicatorColor="@color/color_accent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:trackColor="@color/glass_fill"
         app:trackThickness="3dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

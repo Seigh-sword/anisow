@@ -22,7 +22,3 @@ sealed interface Resource<out T> {
         override val data: T? = null,
     ) : Resource<T>
 }
-
-/** True while a request is in flight, including the empty first load. */
-val Resource<*>.isRefreshing: Boolean
-    get() = this is Resource.Loading

@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/name"
-    style="@style/TextAppearance.AniLab.Title"
+<!-- Category row: a glass card so the list has a rhythm instead of bare text. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?attr/selectableItemBackground"
-    android:paddingVertical="16dp" />
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/bg_glass"
+    android:paddingHorizontal="16dp">
+
+    <TextView
+        android:id="@+id/name"
+        style="@style/TextAppearance.AniLab.Title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingVertical="18dp" />
+</FrameLayout>

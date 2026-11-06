@@ -11,6 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import com.xo.anilab.R
+import com.xo.anilab.core.GradientText
 import com.xo.anilab.core.Resource
 import com.xo.anilab.core.setVisible
 import com.xo.anilab.core.toast
@@ -51,6 +52,8 @@ class MyListFragment : Fragment() {
             this.adapter = this@MyListFragment.adapter
             setHasFixedSize(true)
         }
+
+        GradientText.apply(binding.title)
 
         binding.swipeRefresh.setOnRefreshListener { viewModel.refresh() }
 

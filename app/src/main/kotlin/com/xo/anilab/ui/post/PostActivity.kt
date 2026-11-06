@@ -11,6 +11,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.xo.anilab.R
+import com.xo.anilab.core.GradientText
 import com.xo.anilab.core.Resource
 import com.xo.anilab.core.loadPoster
 import com.xo.anilab.core.setVisible
@@ -49,6 +50,8 @@ class PostActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityPostBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        GradientText.apply(binding.title)
 
         binding.backBtn.setOnClickListener { finish() }
         binding.swipeRefresh.setOnRefreshListener { viewModel.load(postId) }
@@ -158,12 +161,14 @@ class PostActivity : AppCompatActivity() {
     private fun play() {
         val post = current ?: return
         if (post.isDemo) {
-            toast(R.string.player_missing_title)
+            toast(R.string.demo_unavailable)
             return
         }
-        val config = post.playerConfig
 
-        if (config == null) {
+        // The server decides which player an episode opens in. A missing
+        // config is a server-side gap, not a missing install, so it must not
+        // open the "install this player" sheet with nothing to name.
+        val config = post.playerConfig ?: run {
             toast(R.string.player_missing_title)
             return
         }

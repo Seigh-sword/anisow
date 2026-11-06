@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.xo.anilab.R
+import com.xo.anilab.core.GradientText
 import com.xo.anilab.core.Resource
 import com.xo.anilab.core.loadPoster
 import com.xo.anilab.core.setVisible
@@ -58,6 +59,10 @@ class HomeFragment : Fragment() {
             adapter = sectionAdapter
             setHasFixedSize(true)
         }
+
+        // The hero title is the one place a gradient is worth the shader: it is
+        // large, short, and sits over artwork where a flat colour disappears.
+        GradientText.apply(binding.featuredTitle)
 
         binding.swipeRefresh.setOnRefreshListener { viewModel.load() }
         binding.featuredWatch.setOnClickListener { featured?.let { openPost(it.id) } }

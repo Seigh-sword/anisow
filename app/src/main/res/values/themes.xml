@@ -3,15 +3,23 @@
 
     <style name="Theme.AniLab" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/color_primary</item>
-        <item name="colorOnPrimary">@color/color_on_surface</item>
-        <item name="colorSecondary">@color/color_accent</item>
+        <item name="colorOnPrimary">@color/color_on_brand</item>
+        <item name="colorPrimaryContainer">@color/brand_start</item>
+        <item name="colorSecondary">@color/color_secondary</item>
+        <item name="colorOnSecondary">@color/color_on_brand</item>
+        <item name="colorSecondaryContainer">@color/brand_end</item>
         <item name="colorSurface">@color/color_surface</item>
+        <item name="colorSurfaceVariant">@color/color_surface_card</item>
         <item name="colorOnSurface">@color/color_on_surface</item>
+        <item name="colorOnSurfaceVariant">@color/color_on_surface_muted</item>
+        <item name="colorOutline">@color/glass_stroke</item>
+
         <item name="android:colorBackground">@color/color_surface</item>
-        <item name="android:windowBackground">@color/color_surface</item>
+        <item name="android:windowBackground">@drawable/bg_window</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@color/color_surface</item>
         <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="27">shortEdges</item>
     </style>
 
@@ -21,13 +29,22 @@
         <item name="postSplashScreenTheme">@style/Theme.AniLab</item>
     </style>
 
+    <!-- Glass chrome -->
     <style name="Widget.AniLab.BottomNav" parent="Widget.Material3.BottomNavigationView">
-        <item name="android:background">@color/color_surface_elevated</item>
+        <item name="android:background">@drawable/bg_glass_bar</item>
         <item name="itemIconTint">@color/nav_item</item>
         <item name="itemTextColor">@color/nav_item</item>
+        <item name="itemRippleColor">@color/glass_ripple</item>
         <item name="labelVisibilityMode">labeled</item>
+        <item name="elevation">0dp</item>
     </style>
 
+    <style name="Widget.AniLab.IconButton" parent="Widget.Material3.Button.IconButton">
+        <item name="android:background">@drawable/bg_glass_circle</item>
+        <item name="android:padding">8dp</item>
+    </style>
+
+    <!-- Type -->
     <style name="TextAppearance.AniLab.Title" parent="TextAppearance.Material3.TitleLarge">
         <item name="android:textColor">@color/color_on_surface</item>
         <item name="android:textStyle">bold</item>
@@ -35,5 +52,12 @@
 
     <style name="TextAppearance.AniLab.Body" parent="TextAppearance.Material3.BodyMedium">
         <item name="android:textColor">@color/color_on_surface_muted</item>
+    </style>
+
+    <style name="TextAppearance.AniLab.Label" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:textColor">@color/color_on_surface</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.06</item>
+        <item name="android:textAllCaps">true</item>
     </style>
 </resources>

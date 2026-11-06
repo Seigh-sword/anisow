@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import com.xo.anilab.core.Paged
+import com.xo.anilab.core.GradientText
 import com.xo.anilab.core.Resource
 import com.xo.anilab.core.setVisible
 import com.xo.anilab.core.toast
@@ -60,6 +61,8 @@ class LatestFragment : Fragment() {
             setHasFixedSize(true)
             addOnScrollListener(PagingScrollListener { viewModel.loadMore() })
         }
+
+        GradientText.apply(binding.title)
 
         binding.swipeRefresh.setOnRefreshListener { viewModel.refresh() }
 

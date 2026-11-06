@@ -12,10 +12,11 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/screen_margin"
         android:layout_marginTop="@dimen/screen_margin"
-        android:background="@drawable/bg_chip"
+        android:background="@drawable/bg_glass_circle"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="12dp"
+        android:paddingHorizontal="14dp"
+        app:elevation="6dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -24,7 +25,8 @@
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:contentDescription="@null"
-            android:src="@drawable/ic_search" />
+            android:src="@drawable/ic_search"
+            app:tint="@color/color_accent" />
 
         <EditText
             android:id="@+id/searchInput"
@@ -38,7 +40,7 @@
             android:inputType="text"
             android:maxLines="1"
             android:paddingHorizontal="8dp"
-            android:paddingVertical="12dp"
+            android:paddingVertical="14dp"
             android:textColor="@color/color_on_surface"
             android:textColorHint="@color/color_on_surface_muted" />
 
@@ -79,7 +81,8 @@
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:paddingHorizontal="@dimen/screen_margin"
-            android:paddingVertical="@dimen/grid_spacing" />
+            android:paddingBottom="96dp"
+            android:paddingTop="@dimen/grid_spacing" />
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <com.google.android.material.progressindicator.LinearProgressIndicator
@@ -87,9 +90,11 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:indeterminate="true"
+        app:indicatorColor="@color/color_accent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:trackColor="@color/glass_fill"
         app:trackThickness="3dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
