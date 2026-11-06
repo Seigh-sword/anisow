@@ -34,16 +34,16 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Set up Android SDK tools
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
           packages: ""
 
@@ -62,13 +62,18 @@ jobs:
       # The repository ships no Gradle wrapper, so the action provides Gradle.
       # gradle-version must be quoted or YAML reads it as a number.
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: "8.11.1"
 
       - name: Write Firebase config
         if: env.GOOGLE_SERVICES_JSON != ''
         run: printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
+
+      # Runs in a second and catches a wrong id or a dangling resource before
+      # the build spends minutes on it.
+      - name: Check sources
+        run: python3 tools/check_sources.py
 
       - name: Assemble debug APK
         run: |
@@ -100,7 +105,7 @@ jobs:
           ls -lh dist
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: anilab-apk
           path: dist/*.apk
@@ -110,7 +115,7 @@ jobs:
       # The full logs are the useful artifact on a red build.
       - name: Upload build logs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-logs
           path: |
