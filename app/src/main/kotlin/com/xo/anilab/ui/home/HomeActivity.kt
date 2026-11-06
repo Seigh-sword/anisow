@@ -37,6 +37,9 @@ class HomeActivity : AppCompatActivity() {
     /** Notices get exactly one shot per process, so a refresh cannot re-show one. */
     private var noticesChecked = false
 
+    /** The start-up retry is one second chance, not a retry loop. */
+    private var retriedStartup = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -65,20 +68,34 @@ class HomeActivity : AppCompatActivity() {
     }
 
     /**
-     * Notices are a side effect of a successful start-up: the original app
-     * requested them after the home feed came back, and only then.
+     * Two start-up side effects ride on the home feed.
+     *
+     * Notices are shown once, and only after a successful load: the original
+     * app asked for them after the feed came back, and only then.
+     *
+     * A failed first load also has nobody to retry it. The fragment shows the
+     * message and stops, and it has no retry control of its own, so the first
+     * failure gets one retry here; after that pull-to-refresh is the recovery.
      */
     private fun observe() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.home.collect { result ->
-                    if (result !is Resource.Success || noticesChecked) return@collect
-                    noticesChecked = true
-                    NoticeController(
-                        repository = ServiceLocator.repository,
-                        store = ServiceLocator.notices,
-                        fragmentManager = supportFragmentManager,
-                    ).showPending()
+                    when {
+                        result is Resource.Success && !noticesChecked -> {
+                            noticesChecked = true
+                            NoticeController(
+                                repository = ServiceLocator.repository,
+                                store = ServiceLocator.notices,
+                                fragmentManager = supportFragmentManager,
+                            ).showPending()
+                        }
+
+                        result is Resource.Failure && !retriedStartup -> {
+                            retriedStartup = true
+                            viewModel.load()
+                        }
+                    }
                 }
             }
         }

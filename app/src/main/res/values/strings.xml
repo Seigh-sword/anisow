@@ -19,6 +19,7 @@
     <string name="similar">Similar</string>
     <string name="details">Details</string>
     <string name="empty_result">Nothing here yet</string>
+    <string name="empty_watchlist">Your watchlist is empty. Tap the bookmark on a title to save it.</string>
     <string name="search_hit">%1$d results</string>
 
     <!-- Watch list -->

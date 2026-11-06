@@ -9,6 +9,7 @@ import com.xo.anilab.data.model.Post
 import com.xo.anilab.data.repository.AniLabRepository
 import com.xo.anilab.di.ServiceLocator
 import com.xo.anilab.ui.common.viewModelFactory
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,6 +27,7 @@ class CategoryViewModel(
 
     private var categoryId = NO_CATEGORY
     private var inFlight = false
+    private var firstPage: Job? = null
 
     /** The activity passes its intent extra once; later recreation re-reads it. */
     fun start(id: Int) {
@@ -35,9 +37,10 @@ class CategoryViewModel(
     }
 
     fun refresh() {
-        if (categoryId == NO_CATEGORY || inFlight) return
+        if (categoryId == NO_CATEGORY) return
+        firstPage?.cancel()
         inFlight = true
-        viewModelScope.launch {
+        firstPage = viewModelScope.launch {
             _posts.value = Resource.Loading()
             when (val result = repository.category(categoryId, page = 1)) {
                 is Resource.Success -> _posts.value = Resource.Success(Paged.first(result.data))

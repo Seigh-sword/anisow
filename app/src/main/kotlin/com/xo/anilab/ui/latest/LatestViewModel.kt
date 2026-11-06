@@ -9,6 +9,7 @@ import com.xo.anilab.data.model.Post
 import com.xo.anilab.data.repository.AniLabRepository
 import com.xo.anilab.di.ServiceLocator
 import com.xo.anilab.ui.common.viewModelFactory
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,15 +30,21 @@ class LatestViewModel(
     val appending: StateFlow<Boolean> = _appending.asStateFlow()
 
     private var inFlight = false
+    private var firstPage: Job? = null
 
     init {
         refresh()
     }
 
     fun refresh() {
-        if (inFlight) return
+        // A pull-to-refresh during the first load replaces it instead of being
+        // dropped; the spinner would otherwise stop with nothing new on screen.
+        if (inFlight) {
+            firstPage?.cancel()
+            inFlight = false
+        }
         inFlight = true
-        viewModelScope.launch {
+        firstPage = viewModelScope.launch {
             _posts.value = Resource.Loading()
             when (val result = repository.latest(page = 1)) {
                 is Resource.Success -> _posts.value = Resource.Success(Paged.first(result.data))

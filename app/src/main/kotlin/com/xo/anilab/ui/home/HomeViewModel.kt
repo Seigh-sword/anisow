@@ -9,6 +9,7 @@ import com.xo.anilab.data.remote.responses.HomeResponse
 import com.xo.anilab.data.repository.AniLabRepository
 import com.xo.anilab.di.ServiceLocator
 import com.xo.anilab.ui.common.viewModelFactory
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,6 +24,7 @@ class HomeViewModel(
     val home: StateFlow<Resource<HomeResponse>> = _home.asStateFlow()
 
     private var started = false
+    private var inFlight: Job? = null
 
     fun start() {
         // The fragment is recreated on every tab switch; the feed is not.
@@ -31,9 +33,14 @@ class HomeViewModel(
         load()
     }
 
+    /**
+     * A retry tap can land while the first request is still running; the older
+     * coroutine is cancelled so the newest response is the one on screen.
+     */
     fun load() {
         val previous = _home.value.data
-        viewModelScope.launch {
+        inFlight?.cancel()
+        inFlight = viewModelScope.launch {
             _home.value = Resource.Loading(previous)
             _home.value = repository.home()
         }

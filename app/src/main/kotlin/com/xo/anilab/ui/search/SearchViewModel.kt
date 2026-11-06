@@ -17,9 +17,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * Debounced search: the shipped screen fired a request per keystroke, this one
- * waits for a pause. A new query cancels the pending wait, not the request that
- * is already running, so results never arrive out of order.
+ * Search is typed, so every keystroke can supersede the request before it.
+ *
+ * The first version guarded with an `inFlight` flag and returned early, which
+ * silently dropped the second query and left the results of the first on
+ * screen. Instead each search cancels its predecessor and the response is only
+ * applied when it still belongs to the current query.
  */
 class SearchViewModel(
     private val repository: AniLabRepository,
@@ -35,12 +38,18 @@ class SearchViewModel(
     val appending: StateFlow<Boolean> = _appending.asStateFlow()
 
     private var debounce: Job? = null
-    private var inFlight = false
+    private var firstPage: Job? = null
+    private var nextPage: Job? = null
 
     fun onQueryChanged(raw: String) {
         val query = raw.trim()
+        if (query == _query.value) return
         _query.value = query
+
         debounce?.cancel()
+        firstPage?.cancel()
+        nextPage?.cancel()
+        _appending.value = false
 
         if (query.isEmpty()) {
             _posts.value = Resource.Success(Paged())
@@ -54,34 +63,44 @@ class SearchViewModel(
     }
 
     fun search(query: String = _query.value) {
-        if (query.isEmpty() || inFlight) return
-        inFlight = true
-        viewModelScope.launch {
+        if (query.isEmpty()) return
+
+        debounce?.cancel()
+        firstPage?.cancel()
+        nextPage?.cancel()
+        _appending.value = false
+
+        firstPage = viewModelScope.launch {
             _posts.value = Resource.Loading()
-            when (val result = repository.search(query, page = 1)) {
-                is Resource.Success -> _posts.value = Resource.Success(Paged.first(result.data))
-                is Resource.Failure -> _posts.value = Resource.Failure(result.message)
-                is Resource.Loading -> Unit
+            val result = repository.search(query, page = 1)
+            // A later keystroke already asked for something else.
+            if (query != _query.value) return@launch
+            _posts.value = when (result) {
+                is Resource.Success -> Resource.Success(Paged.first(result.data))
+                is Resource.Failure -> Resource.Failure(result.message)
+                is Resource.Loading -> Resource.Loading()
             }
-            inFlight = false
         }
     }
 
     fun loadMore() {
         val current = _posts.value.data ?: return
         val query = _query.value
-        if (query.isEmpty() || inFlight || !current.hasMore) return
+        if (query.isEmpty() || !current.hasMore) return
+        if (firstPage?.isActive == true || nextPage?.isActive == true) return
 
-        inFlight = true
         _appending.value = true
-        viewModelScope.launch {
-            when (val result = repository.search(query, current.page + 1)) {
-                is Resource.Success -> _posts.value = Resource.Success(current.append(result.data))
-                is Resource.Failure -> _posts.value = Resource.Failure(result.message, current)
-                is Resource.Loading -> Unit
+        nextPage = viewModelScope.launch {
+            val result = repository.search(query, current.page + 1)
+            if (query == _query.value) {
+                _posts.value = when (result) {
+                    is Resource.Success -> Resource.Success(current.append(result.data))
+                    // A failed page keeps what is on screen; scrolling retries.
+                    is Resource.Failure -> Resource.Failure(result.message, current)
+                    is Resource.Loading -> Resource.Loading(current)
+                }
             }
             _appending.value = false
-            inFlight = false
         }
     }
 

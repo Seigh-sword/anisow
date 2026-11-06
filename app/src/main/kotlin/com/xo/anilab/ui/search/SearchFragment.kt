@@ -89,6 +89,8 @@ class SearchFragment : Fragment() {
     private fun render(result: Resource<Paged<Post>>) {
         binding.loader.setVisible(result is Resource.Loading)
         if (result !is Resource.Loading) binding.swipeRefresh.isRefreshing = false
+        // A message about the previous query must not outlive it.
+        if (result !is Resource.Success) binding.empty.setVisible(false)
 
         val hasQuery = viewModel.query.value.isNotEmpty()
 
@@ -99,13 +101,16 @@ class SearchFragment : Fragment() {
                 val items = result.data.items
                 adapter.submitList(items)
 
-                // A counter above the grid; an empty query has nothing to count.
+                // A counter above the grid. The count is the whole result set,
+                // so it stays up while more pages arrive; the label only
+                // appears once there is something to describe.
                 binding.title.setVisible(hasQuery && items.isNotEmpty())
                 binding.title.text = getString(R.string.search_hit, items.size)
 
-                if (hasQuery && !result.data.hasMore && items.isEmpty()) {
-                    toast(R.string.empty_result)
-                }
+                // Say it on screen rather than in a toast that vanishes: this is
+                // the state the screen sits in until the query changes.
+                binding.empty.text = getString(R.string.empty_result)
+                binding.empty.setVisible(hasQuery && items.isEmpty() && !result.data.hasMore)
             }
         }
     }

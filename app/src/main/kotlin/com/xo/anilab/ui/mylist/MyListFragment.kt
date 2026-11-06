@@ -67,15 +67,16 @@ class MyListFragment : Fragment() {
     private fun render(result: Resource<List<Post>>) {
         binding.loader.setVisible(result is Resource.Loading)
         if (result !is Resource.Loading) binding.swipeRefresh.isRefreshing = false
+        if (result !is Resource.Success) binding.empty.setVisible(false)
 
         when (result) {
             is Resource.Loading -> Unit
             is Resource.Failure -> toast(result.message)
             is Resource.Success -> {
                 adapter.submitList(result.data)
-                binding.title.setText(
-                    if (result.data.isEmpty()) R.string.empty_result else R.string.watchlist
-                )
+                // The heading keeps its name; an empty grid explains itself
+                // rather than leaving the screen blank.
+                binding.empty.setVisible(result.data.isEmpty())
             }
         }
     }
