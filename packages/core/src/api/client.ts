@@ -218,25 +218,47 @@ export class AniWatchClient {
 
   // ------------------------------------------------------------------ browse
 
-  /** A genre or category listing, e.g. `action`, `tv`, `movie`. */
+  /**
+   * A genre listing, e.g. `action`, `slice-of-life`.
+   *
+   * The path is `/genres/{slug}` — plural. `/genre/{slug}` is a 404 on this
+   * deployment, which is what every published scraper assumes; the route was
+   * confirmed by reading the home page's genre widget and requesting each
+   * candidate (see tools/probe/genre-links.mjs).
+   */
   async browse(category: string, page = 1): Promise<Result<AnimeCard[]>> {
     const slug = category.trim().toLowerCase().replace(/\s+/g, "-");
     const suffix = page > 1 ? `?page=${page}` : "";
-    const pageResult = await this.requestText(`/genre/${encodeURIComponent(slug)}${suffix}`);
-    if (!pageResult.ok) return pageResult;
 
-    return { ok: true, data: collectCards(pageResult.data) };
+    for (const path of [`/genres/${encodeURIComponent(slug)}${suffix}`, `/genres/${slug}/page/${page}`]) {
+      const pageResult = await this.requestText(path);
+      if (!pageResult.ok) continue;
+
+      const items = collectCards(pageResult.data);
+      if (items.length > 0) return { ok: true, data: items };
+    }
+
+    return { ok: false, error: `No titles found for "${category}"` };
   }
 
-  /** Genres the site links to, so the filter row is the site's own list. */
+  /**
+   * The genre list, read from the site's own widget.
+   *
+   * Anchored to `hianime-genres-widget` so the parser cannot wander into a
+   * poster link elsewhere on the page, and tolerant of the absolute URLs the
+   * markup actually uses (`https://aniwatchtv.ws/genres/action`).
+   */
   async genres(): Promise<Result<{ name: string; slug: string }[]>> {
     const page = await this.requestText("/home");
     if (!page.ok) return page;
 
+    const start = page.data.indexOf("hianime-genres-widget");
+    const scope = start === -1 ? page.data : page.data.slice(start, start + 12_000);
+
     const found = new Map<string, string>();
-    const re = /<a\b[^>]*href="[^"]*\/genre\/([a-z0-9-]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+    const re = /<a\b[^>]*href="[^"]*\/genres?\/([a-z0-9-]+)"[^>]*>([\s\S]*?)<\/a>/gi;
     let m: RegExpExecArray | null;
-    while ((m = re.exec(page.data)) !== null) {
+    while ((m = re.exec(scope)) !== null) {
       const slug = m[1] ?? "";
       const label = text(m[2] ?? "");
       if (slug && label && !found.has(slug)) found.set(slug, label);
@@ -244,7 +266,9 @@ export class AniWatchClient {
 
     return {
       ok: true,
-      data: [...found.entries()].map(([slug, name]) => ({ slug, name })).sort((a, b) => a.name.localeCompare(b.name)),
+      data: [...found.entries()]
+        .map(([slug, name]) => ({ slug, name }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
     };
   }
 

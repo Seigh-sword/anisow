@@ -179,6 +179,20 @@ try {
     }
   }
 
+  /* ------------------------------------------------------------ genres */
+
+  // `/genre/{slug}` is a 404 on this deployment; `/genres/{slug}` is the route.
+  // This is asserted because a wrong path fails *quietly* — the screen just looks
+  // empty — which is exactly how it survived the first build.
+  const genrePage = await get("/api/ani/genres/action");
+  const genreHtml = await genrePage.text();
+  const genreCards = [...genreHtml.matchAll(/\/watch\/[a-z0-9-]+-\d+/g)].length;
+  check("the genre route answers", genrePage.status === 200, `status ${genrePage.status}`);
+  check("the genre route lists titles", genreCards > 5, `${genreCards} watch links`);
+
+  const oldRoute = await get("/api/ani/genre/action");
+  check("the old singular route is still a 404 (documented, not assumed)", oldRoute.status === 404, `status ${oldRoute.status}`);
+
   /* ------------------------------------------------------------ the file proxy */
 
   const blocked = await get("/api/dl?src=http://169.254.169.254/latest/meta-data/");

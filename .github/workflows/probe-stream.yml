@@ -24,23 +24,10 @@ permissions:
   contents: read
 
 jobs:
-  genres:
-    name: Find the genre links
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      # Diagnostic, not a gate: it reports what the site actually serves so the
-      # parser can be fixed against evidence.
-      - name: Probe for /genre/ links
-        run: node tools/probe/genre-links.mjs
-
+  # The genre route used to be *probed* here, because it was unknown. It is now
+  # asserted in `verify.yml` (the smoke job) against `/genres/{slug}`, which is
+  # the path this deployment actually serves. A probe that only reports is not
+  # enough for something the UI depends on.
   probe:
     name: Resolve an episode
     runs-on: ubuntu-latest
