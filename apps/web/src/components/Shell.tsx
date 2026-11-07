@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Glass } from "./Glass";
+import { DEMO, isDemoActive } from "../lib/demo";
 
 /**
  * The app frame: a brand backdrop, a scroll area that floats above the nav, and
@@ -178,10 +179,48 @@ export function BottomNav() {
   );
 }
 
+/** Says, once and quietly, that the catalogue on screen is sample data. */
+function DemoBadge() {
+  if (!DEMO) return null;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: "calc(8px + env(safe-area-inset-top))",
+        left: "50%",
+        translate: "-50% 0",
+        zIndex: 60,
+        pointerEvents: "none",
+      }}
+    >
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "4px 10px",
+          borderRadius: 999,
+          border: "1px solid rgba(255,194,77,0.4)",
+          background: "rgba(255,194,77,0.12)",
+          backdropFilter: "blur(10px)",
+          fontSize: 10,
+          fontWeight: 800,
+          letterSpacing: 0.9,
+          color: "var(--warning)",
+        }}
+      >
+        PREVIEW DATA{isDemoActive() ? "" : " · LIVE PENDING"}
+      </span>
+    </div>
+  );
+}
+
 export function Shell({ children }: { children: ReactNode }) {
   return (
     <>
       <BrandBackdrop />
+      <DemoBadge />
       <Page>{children}</Page>
       <BottomNav />
     </>

@@ -33,6 +33,66 @@ type Handler = (frame: ProgressFrame) => void;
 const handlers = new Set<Handler>();
 let bound = false;
 
+/**
+ * A stand-in player for the offline preview.
+ *
+ * Only reachable with `VITE_DEMO=1`, and only for embeds whose URL starts with
+ * `demo:`. It emits the same progress frames a real host would, and answers the
+ * same commands, so the chrome — scrubber, +-10s, step — can be exercised with
+ * no network. Nothing about the real path changes: `send` still posts messages
+ * to a real frame for a real URL.
+ */
+const demo = {
+  time: 0,
+  duration: 1440,
+  playing: true,
+  timer: 0,
+};
+
+function demoEmit(): void {
+  const frame: ProgressFrame = { currentTime: demo.time, duration: demo.duration };
+  for (const handler of handlers) handler(frame);
+}
+
+function demoTick(): void {
+  if (!demo.playing) return;
+  demo.time = Math.min(demo.duration, demo.time + 1);
+  demoEmit();
+}
+
+function demoApply(command: PlayerCommand): void {
+  switch (command.type) {
+    case "seek":
+      demo.time = Math.max(0, Math.min(demo.duration, command.time));
+      demoEmit();
+      break;
+    case "play":
+      demo.playing = true;
+      break;
+    case "pause":
+      demo.playing = false;
+      break;
+    case "state":
+      demoEmit();
+      break;
+    default:
+      break;
+  }
+}
+
+/** Starts the preview clock; idempotent. */
+export function startDemoPlayback(): void {
+  bind();
+  if (demo.timer) return;
+  demo.timer = window.setInterval(demoTick, 1000);
+  window.setTimeout(demoEmit, 60);
+}
+
+export function stopDemoPlayback(): void {
+  window.clearInterval(demo.timer);
+  demo.timer = 0;
+}
+
 function bind(): void {
   if (bound || typeof window === "undefined") return;
   bound = true;
@@ -89,6 +149,13 @@ export function send(
   embedUrl: string,
   command: PlayerCommand,
 ): void {
+  // Sample embeds have no frame; drive the preview clock instead.
+  if (embedUrl.startsWith("demo:")) {
+    startDemoPlayback();
+    demoApply(command);
+    return;
+  }
+
   const target = frame?.contentWindow;
   if (!target) return;
 

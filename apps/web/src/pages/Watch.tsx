@@ -11,8 +11,11 @@ import {
   formatTime,
   onProgress,
   send,
+  startDemoPlayback,
+  stopDemoPlayback,
   type ProgressFrame,
 } from "../lib/playerBridge";
+import { DEMO } from "../lib/demo";
 import { Logo } from "../components/Logo";
 import { BrandButton, GlassButton, IconButton } from "../components/Button";
 import { Sheet } from "../components/Sheet";
@@ -91,6 +94,7 @@ export function Watch() {
 
   const serverList: Server[] = servers.data ?? [];
   const server: Server | undefined = serverList[serverIndex] ?? serverList[0];
+  const isSample = Boolean(server?.embedUrl.startsWith("demo:"));
 
   /* ------------------------------------------------------------ offline */
 
@@ -217,6 +221,13 @@ export function Watch() {
     setFrame((value) => ({ ...value, currentTime: target }));
     progressRef.current = { ...progressRef.current, currentTime: target };
   };
+
+  // The preview clock starts and stops with the sample stage.
+  useEffect(() => {
+    if (!isSample) return;
+    startDemoPlayback();
+    return stopDemoPlayback;
+  }, [isSample, current?.id]);
 
   // Auto-hide the chrome over the video, the way a player should.
   useEffect(() => {
@@ -345,6 +356,42 @@ export function Watch() {
               }}
               onEnded={() => next && goToEpisode(next)}
             />
+          ) : embedUrl && isSample ? (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "grid",
+                placeItems: "center",
+                background:
+                  "radial-gradient(circle at 30% 25%, rgba(0,123,255,0.30), transparent 55%), radial-gradient(circle at 75% 70%, rgba(255,0,255,0.26), transparent 55%), #05060b",
+                textAlign: "center",
+                padding: 24,
+              }}
+            >
+              <div style={{ display: "grid", gap: 10, justifyItems: "center" }}>
+                <span
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: 999,
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    background: "rgba(0,0,0,0.35)",
+                    fontSize: 10.5,
+                    fontWeight: 800,
+                    letterSpacing: 1.4,
+                  }}
+                >
+                  PREVIEW · NO STREAM
+                </span>
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>
+                  {title} {step}
+                </p>
+                <p style={{ margin: 0, maxWidth: "40ch", fontSize: 12.5, lineHeight: 1.55, color: "var(--text-muted)" }}>
+                  The real embed plays here. This build has no outbound network, so the stage runs a stand-in clock:
+                  the scrubber, ±10s and the episode stepper are all live.
+                </p>
+              </div>
+            </div>
           ) : embedUrl ? (
             <iframe
               ref={frameRef}

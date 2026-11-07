@@ -148,6 +148,34 @@ export function enqueue(input: EnqueueInput): DownloadEntry {
   return entry;
 }
 
+/**
+ * Simulated transfer for sample entries (`demo:` URLs).
+ *
+ * Only used with `VITE_DEMO=1`: it moves bytes at a fixed rate so the queue,
+ * the bars, cancel, retry and delete can all be exercised without a file host.
+ * The stored blob is tiny and inert; nothing here runs for a real URL.
+ */
+async function simulate(entry: DownloadEntry, controller: AbortController): Promise<Blob> {
+  const totalBytes = 26 * 1024 * 1024;
+  const steps = 34;
+  const stepMs = 140;
+
+  for (let step = 1; step <= steps; step += 1) {
+    if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
+    await new Promise((done) => setTimeout(done, stepMs));
+    const done = Math.round((step / steps) * totalBytes);
+    report(
+      entry.id,
+      { progress: Math.round((step / steps) * 100), bytesDone: done, bytesTotal: totalBytes },
+      true,
+    );
+  }
+
+  return new Blob([`AniSpots sample file for ${entry.animeTitle} EP ${entry.episodeNumber}`], {
+    type: "video/mp4",
+  });
+}
+
 export async function start(id: string): Promise<void> {
   if (running.has(id)) return;
 
@@ -161,6 +189,19 @@ export async function start(id: string): Promise<void> {
   notify();
 
   try {
+    if (entry.sourceUrl.startsWith("demo:")) {
+      const sample = await simulate(entry, controller);
+      await putFile(id, sample);
+      updateDownload(id, {
+        state: "done",
+        progress: 100,
+        localUri: `idb:${id}`,
+        bytesDone: 26 * 1024 * 1024,
+        bytesTotal: 26 * 1024 * 1024,
+      });
+      return;
+    }
+
     const response = await fetch(mediaUrl(entry.sourceUrl), { signal: controller.signal });
     if (!response.ok) throw new Error(`The file host answered ${response.status}`);
 

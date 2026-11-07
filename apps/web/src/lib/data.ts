@@ -2,6 +2,18 @@ import type { AnimeCard, HomeRails } from "@anispots/core";
 import { api, unwrap } from "./api";
 import { cached } from "./cache";
 import { getContinueWatching, getDownloads } from "./library";
+import {
+  DEMO,
+  demoBrowse,
+  demoDetails,
+  demoDownloadLinks,
+  demoEpisodes,
+  demoGenres,
+  demoHome,
+  demoSearch,
+  demoServers,
+  markDemo,
+} from "./demo";
 
 /**
  * The request layer for screens.
@@ -10,12 +22,26 @@ import { getContinueWatching, getDownloads } from "./library";
  * call": it composes the endpoints the screen needs, caches the expensive ones,
  * and returns plain data or throws. Screens then have no knowledge of the site's
  * routes, which is what keeps a route change to a one-file edit.
+ *
+ * `DEMO` is a build flag, never a fallback: with it off (the default) a failed
+ * request throws and the screen shows its retry card.
  */
+
+/** Wrap a loader so the preview build can answer without a network. */
+async function attempt<T>(load: () => Promise<T>, fallback: () => T): Promise<T> {
+  if (!DEMO) return load();
+  try {
+    return await load();
+  } catch {
+    markDemo();
+    return fallback();
+  }
+}
 
 /* ------------------------------------------------------------------- home */
 
 export const loadHome = async (): Promise<HomeRails> =>
-  unwrap(await cached("home", () => api.home()));
+  cached("home", () => attempt(() => api.home().then(unwrap), demoHome));
 
 /**
  * The user's own shelves, shown above the site's rails.
@@ -63,10 +89,14 @@ export function localRails(progressFor: (animeId: string) => number | undefined)
 /* ----------------------------------------------------------------- detail */
 
 export const loadDetails = async (animeId: string) =>
-  unwrap(await cached(`details:${animeId}`, () => api.details(animeId)));
+  cached(`details:${animeId}`, () =>
+    attempt(() => api.details(animeId).then(unwrap), () => demoDetails(animeId)),
+  );
 
 export const loadEpisodes = async (animeId: string) =>
-  unwrap(await cached(`episodes:${animeId}`, () => api.episodes(animeId)));
+  cached(`episodes:${animeId}`, () =>
+    attempt(() => api.episodes(animeId).then(unwrap), () => demoEpisodes(animeId)),
+  );
 
 /**
  * Servers for one episode.
@@ -75,7 +105,7 @@ export const loadEpisodes = async (animeId: string) =>
  * one small request, and the player already owns its own loading state.
  */
 export const loadServers = async (episodeId: string) =>
-  unwrap(await api.servers(episodeId));
+  attempt(() => api.servers(episodeId).then(unwrap), demoServers);
 
 /**
  * Download links for one episode.
@@ -84,7 +114,11 @@ export const loadServers = async (episodeId: string) =>
  * answer rather than a failure — the sheet explains it instead of looking broken.
  */
 export async function loadDownloadLinks(episodeId: string) {
-  const result = await api.downloads(episodeId);
+  const result = await attempt(
+    () => api.downloads(episodeId),
+    () => ({ ok: true as const, data: demoDownloadLinks() }),
+  );
+
   return result.ok
     ? { links: result.data, error: null as string | null }
     : { links: [], error: result.error };
@@ -92,13 +126,21 @@ export async function loadDownloadLinks(episodeId: string) {
 
 /* ----------------------------------------------------------------- search */
 
-export const search = async (query: string) => unwrap(await api.search(query));
+export const search = async (query: string) =>
+  attempt(() => api.search(query).then(unwrap), () => demoSearch(query));
 
-export const suggest = async (query: string) => unwrap(await api.suggest(query));
+export const suggest = async (query: string) =>
+  attempt(
+    () => api.suggest(query).then(unwrap),
+    () => demoSearch(query).slice(0, 8),
+  );
 
 /* ----------------------------------------------------------------- browse */
 
-export const loadGenres = async () => unwrap(await cached("genres", () => api.genres()));
+export const loadGenres = async () =>
+  cached("genres", () => attempt(() => api.genres().then(unwrap), demoGenres));
 
 export const loadBrowse = async (category: string, page = 1) =>
-  unwrap(await cached(`browse:${category}:${page}`, () => api.browse(category, page)));
+  cached(`browse:${category}:${page}`, () =>
+    attempt(() => api.browse(category, page).then(unwrap), demoBrowse),
+  );
