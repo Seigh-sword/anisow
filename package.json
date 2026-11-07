@@ -1,0 +1,23 @@
+{
+  "name": "anispots",
+  "private": true,
+  "version": "0.1.0",
+  "description": "AniSpots — anime discovery and streaming, web + Android + iOS from one codebase.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "web": "npm run dev --workspace @anispots/web",
+    "app": "npm run start --workspace @anispots/mobile",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "probe": "npm run probe --workspace @anispots/probe"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

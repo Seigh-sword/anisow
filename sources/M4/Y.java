@@ -1,6 +1,0 @@
-package M4;
-
-/* JADX INFO: loaded from: classes.dex */
-public interface Y {
-    void d(Throwable th);
-}
