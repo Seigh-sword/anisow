@@ -37,7 +37,7 @@ jobs:
           node-version: "22"
 
       - name: Run API & filter probe
-        run: node tools/probe/apis.mjs
+        run: node --experimental-strip-types tools/probe/apis.mjs
 
   # The genre route used to be *probed* here, because it was unknown. It is now
   # asserted in `verify.yml` (the smoke job) against `/genres/{slug}`, which is
