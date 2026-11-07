@@ -7,6 +7,12 @@ name: Probe stream chain
 # Manual trigger, and it never blocks a build: the answer is the artifact.
 
 on:
+  # Pushing to the probe itself re-runs it; that is the working trigger here,
+  # since the automation token may not dispatch workflows.
+  push:
+    paths:
+      - "tools/probe/**"
+      - ".github/workflows/probe-stream.yml"
   workflow_dispatch:
     inputs:
       base:
