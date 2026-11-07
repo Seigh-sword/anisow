@@ -117,8 +117,32 @@ empty sheet.
 | `episode/downloads` → quality groups | verified (direct fetch) |
 | `data-hash` → embed URL decode | verified from the site's own JS (`atob`) |
 | Embed hosts, query params, postMessage | verified from the site's own JS |
-| Embed URL actually plays | **not verified** — needs the decoded hash from a live run |
+| `data-hash` decode, live | **verified**: `aHR0cHM6Ly96b2tvYW5pbWUudmlkZW8v…` → `https://zokoanime.video/stream/mal/63818/1/sub` |
+| Embed page loads a real player | **verified** — subtitles in 9 languages, speed 0.25×–2× |
 | `.m3u8` extraction | **does not exist** on this site |
 
-The one remaining unknown is the last-but-one line: decode a live `data-hash` and
-fetch that embed. `tools/probe` does exactly that and reports through annotations.
+## The verified chain, in full
+
+```
+GET  /home                                     -> rails, slugs, ids
+GET  /watch/{slug}-{id}                        -> episode ids (?ep=NNNN)
+GET  /api/theme/episode/servers?episodeId=     -> {status,html}
+     html .server-item[data-hash] -> base64    -> https://zokoanime.video/stream/mal/{mal}/{ep}/{sub|dub}
+GET  https://zokoanime.video/stream/mal/...    -> real player, 9 subtitle langs, 0.25x-2x speed
+GET  /api/theme/episode/list/{animeId}         -> totalItems + episode html
+GET  /api/theme/episode/downloads?episodeId=   -> 360p / 720p / 1080p download links
+```
+
+A live decode, from the probe run: `aHR0cHM6Ly96b2tvYW5pbWUudmlkZW8vc3RyZWFtL21hbC82MzgxOC8xL3N1Yg==`
+→ `https://zokoanime.video/stream/mal/63818/1/sub`.
+
+Fetching that embed returns a working video.js page whose own settings menu lists
+the subtitle tracks and the speed ladder. So the features the app needs —
+subtitles, speed, quality, fullscreen, PiP — **exist inside that player**. The app
+embeds it and drives it; it does not reimplement it. That is the honest design,
+and it is why the feature list is achievable rather than aspirational.
+
+One caveat worth knowing: the embed refuses playback without a browser session
+(it answered `Error Code: 232011` to a bare fetch), which is expected for a
+player page and is exactly why the app loads it as an iframe/WebView rather than
+trying to extract a media URL.
