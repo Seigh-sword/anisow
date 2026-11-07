@@ -354,53 +354,57 @@ async function probeClientScripts(watch) {
  *    the known shapes rather than assuming one.
  */
 async function probeServers(episodeId, declared = {}) {
-  // Declared first: the page knows its own route names, the older guesses did not.
-  const declaredAjax = declared.hianime_ajax_urls?.find((u) => u.includes("ajax"));
-  const declaredRest = declared.hianime_ajax_urls?.find((u) => u.includes("rest"));
-  const epRest = declared.hianime_ep_ajax_urls?.find((u) => u.includes("ajax") || u.includes("rest"));
+  const pageUrl = declared.watchUrl || `${BASE}/watch/x?ep=${episodeId}`;
+  // The servers are in the watch page markup: each .server-item carries a
+  // base64 data-hash that decodes to the player embed URL. No AJAX involved.
+  const res = await client.get(pageUrl);
+  const html = String(res.data);
+  const $ = cheerio.load(html);
 
-  const discovered = (declared.apiPaths || [])
-    .filter((p) => /episode|server|source|stream/i.test(p))
-    .map((p) => `${p}${p.includes("?") ? "&" : "?"}episodeId=${episodeId}`);
+  // The servers live on the real watch page for the anime, not a synthetic one.
+  const page = res.status === 200 && $(".server-item").length ? html : null;
 
-  const paths = [
-    ...discovered,
-    ...(epRest ? [`${epRest.replace(/\/$/, "")}`] : []),
-    ...(declaredAjax ? [`${declaredAjax}?action=servers&episodeId=${episodeId}`] : []),
-    ...(declaredRest ? [`${declaredRest.replace(/\/$/, "")}/servers?episodeId=${episodeId}`] : []),
-    `/ajax/v2/episode/servers?episodeId=${episodeId}`,
-    `/ajax/episode/servers?episodeId=${episodeId}`,
-  ];
-
-  const attempts = [];
-  for (const path of paths) {
-    const res = await client.get(join(path), {
-      headers: { "X-Requested-With": "XMLHttpRequest", Referer: `${BASE}/home` },
+  if (!page) {
+    return fatal("servers in watch markup", {
+      status: res.status,
+      serverItems: $(".server-item").length,
     });
-    const body = typeof res.data === "string" ? res.data : JSON.stringify(res.data);
-    attempts.push({ path, status: res.status, bytes: body.length, head: body.slice(0, 120) });
-
-    if (res.status === 200 && body.includes("server-item")) {
-      const $ = cheerio.load(body);
-      const servers = [];
-      $(".server-item").each((_, el) => {
-        servers.push({
-          name: $(el).find("a").text().trim().toLowerCase(),
-          serverId: $(el).attr("data-server-id")?.trim(),
-          srcId: $(el).attr("data-id")?.trim(),
-          type: $(el).attr("data-type")?.trim(),
-        });
-      });
-      step("GET episode servers", true, { path, status: res.status, servers });
-      return servers;
-    }
   }
 
-  return fatal("GET episode servers", { attempts });
+  const servers = [];
+  $(".server-item").each((_, el) => {
+    const hash = $(el).attr("data-hash") || $(el).find("[data-hash]").attr("data-hash");
+    let embed = null;
+    if (hash) {
+      try {
+        embed = Buffer.from(hash, "base64").toString("utf8");
+      } catch {
+        embed = null;
+      }
+    }
+    servers.push({
+      name: $(el).attr("data-server-name") || $(el).find("a").text().trim(),
+      type: $(el).attr("data-type"),
+      hash,
+      embed,
+      srcId: $(el).attr("data-id"),
+    });
+  });
+
+  step("servers in watch markup", true, {
+    count: servers.length,
+    servers: servers.slice(0, 5),
+  });
+  return servers;
 }
 
 /** 4. Server -> embed URL (this is the MegaCloud/MegaPlay hop). */
 async function probeSources(server) {
+  if (server.embed) {
+    step("embed from data-hash", true, { embed: server.embed, name: server.name, type: server.type });
+    return { link: server.embed };
+  }
+
   const paths = [
     `/ajax/v2/episode/sources?id=${server.srcId}`,
     `/ajax/episode/sources?id=${server.srcId}`,
@@ -488,7 +492,7 @@ try {
   await probeDiscovery(watch);
   const declared = await probeDeclaredRoutes(watch);
   const scripts = await probeClientScripts(watch);
-  const servers = await probeServers(watch.episodeIds[0], { ...declared, ...scripts });
+  const servers = await probeServers(watch.episodeIds[0], { ...declared, ...scripts, watchUrl: watch.url });
   const chosen = servers.find((s) => s.type !== "dub") || servers[0];
   const sources = await probeSources(chosen);
   await probeEmbed(sources);
