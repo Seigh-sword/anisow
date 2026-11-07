@@ -362,43 +362,36 @@ async function probeClientScripts(watch) {
  *    the known shapes rather than assuming one.
  */
 async function probeServers(episodeId, declared = {}) {
-  const pageUrl = declared.watchUrl || `${BASE}/watch/x?ep=${episodeId}`;
-  // The servers are in the watch page markup: each .server-item carries a
-  // base64 data-hash that decodes to the player embed URL. No AJAX involved.
-  const res = await client.get(pageUrl);
-  const html = String(res.data);
+  // The exact route the site's own watch.min.js uses:
+  //   hianime_ep_ajax.rest_url + 'episode/servers?episodeId=' + id
+  // It answers {status, html}; the .server-item elements in that html carry a
+  // base64 data-hash which atob()s into the player embed URL.
+  const restUrl = declared.hianime_ep_ajax_urls?.[0] || `${BASE}/api/theme/`;
+  const apiUrl = `${restUrl.replace(/\/$/, "")}/episode/servers?episodeId=${episodeId}`;
+
+  const res = await client.get(apiUrl, {
+    headers: { Referer: declared.watchUrl || `${BASE}/home`, Accept: "application/json" },
+  });
+  const json = typeof res.data === "string" ? safeJson(res.data) : res.data;
+  const html = json?.html || "";
+
+  step("GET episode/servers", res.status === 200 && !!json, {
+    apiUrl,
+    status: res.status,
+    ok: json?.status ?? null,
+    htmlBytes: html.length,
+    bodyHead: typeof res.data === "string" ? res.data.slice(0, 200) : null,
+  });
+
   const $ = cheerio.load(html);
-
-  // The servers live on the real watch page for the anime, not a synthetic one.
-  const page = res.status === 200 && $(".server-item").length ? html : null;
-
-  if (!page) {
-    // Report the markup itself: the class names are the thing to learn, and a
-    // markdown render of the page cannot show them.
-    const serverishClasses = new Set();
-    $("[class]").each((_, el) => {
-      const cls = String($(el).attr("class") || "");
-      if (/server|player|embed|watch/i.test(cls)) serverishClasses.add(cls.slice(0, 120));
-    });
-
-    const hashCount = (html.match(/data-hash=/g) || []).length;
-    const vidstreamIdx = html.search(/vidstream|megacloud|megaplay|zokoanime/i);
-    const serverIdx = html.search(/servers-content|server-item|server-list/i);
-
-    return fatal("servers in watch markup", {
-      status: res.status,
-      serverItems: $(".server-item").length,
-      dataHashCount: hashCount,
-      serverishClasses: [...serverishClasses].slice(0, 12),
-      aroundServerMention: serverIdx >= 0 ? html.slice(serverIdx - 200, serverIdx + 700).replace(/\s+/g, " ") : null,
-      aroundPlayerHost: vidstreamIdx >= 0 ? html.slice(vidstreamIdx - 300, vidstreamIdx + 500).replace(/\s+/g, " ") : null,
-      hasIframe: /<iframe/i.test(html),
-    });
-  }
-
   const servers = [];
+
   $(".server-item").each((_, el) => {
-    const hash = $(el).attr("data-hash") || $(el).find("[data-hash]").attr("data-hash");
+    const hash =
+      $(el).attr("data-hash") ||
+      $(el).find("[data-hash]").attr("data-hash") ||
+      $(el).find("a").attr("data-hash");
+
     let embed = null;
     if (hash) {
       try {
@@ -407,19 +400,24 @@ async function probeServers(episodeId, declared = {}) {
         embed = null;
       }
     }
+
     servers.push({
       name: $(el).attr("data-server-name") || $(el).find("a").text().trim(),
       type: $(el).attr("data-type"),
       hash,
       embed,
-      srcId: $(el).attr("data-id"),
     });
   });
 
-  step("servers decoded", true, {
-    count: servers.length,
-    servers: servers.slice(0, 5),
-  });
+  if (servers.length === 0) {
+    return fatal("servers decoded", {
+      apiUrl,
+      serverItems: 0,
+      htmlSample: html.replace(/\s+/g, " ").slice(0, 600),
+    });
+  }
+
+  step("servers decoded", true, { count: servers.length, servers: servers.slice(0, 4) });
   return servers;
 }
 
