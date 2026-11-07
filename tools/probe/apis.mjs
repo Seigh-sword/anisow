@@ -1,8 +1,10 @@
 /**
- * Probe part 4:
- *   1. Zoko docs chunk + download chunk from zokoanime.video/assets/...
- *   2. AniWatch frontend JS (frontend-QO4TW5y5.js): how does search suggest & filter form submit work?
- *   3. AniWatch /filter sort select & hidden genre input name
+ * Probe part 5:
+ *   1. Exact markup of a card on `/search?keyword=naruto` and `/home` and `/genres/action`!
+ *      Why did `collectCards` or `flw-item` behave the way it did?
+ *   2. Exact `/filter` form submit behavior in `frontend-QO4TW5y5.js`
+ *   3. Exact Zoko docs URL patterns (`docs-sIsMGsz7.js` and `routes-BMUbY_wy.js`)
+ *   4. Anikoto API full docs & whether `/recent-anime` supports any query or if we should index/cache its pages!
  */
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
@@ -24,52 +26,45 @@ async function get(url, headers = {}) {
   }
 }
 
-// 1. Zoko asset chunks
-const zokoIndex = await get("https://zokoanime.video/assets/index-Dd1_c_X8.js");
-const zokoAssets = [...zokoIndex.text.matchAll(/"(assets\/[^"]+\.js)"/g)].map((m) => m[1]);
-notice("1a-zoko-assets", zokoAssets.join(" , "));
+// 1. Exact card HTML on /search?keyword=naruto
+const searchRes = await get("https://aniwatchtv.ws/search?keyword=naruto", { Referer: "https://aniwatchtv.ws/home" });
+const flwIdx = searchRes.text.indexOf("flw-item");
+notice("1-search-card-html", flwIdx >= 0 ? searchRes.text.slice(flwIdx - 30, flwIdx + 900) : "no flw-item");
 
-const docsAsset = zokoAssets.find((a) => /doc/i.test(a));
-if (docsAsset) {
-  const d = await get(`https://zokoanime.video/${docsAsset}`);
-  // Extract readable string literals from the docs chunk
-  const strings = [...d.text.matchAll(/["'`]([^"'`]{12,200})["'`]/g)]
-    .map((m) => m[1])
-    .filter((s) => /https?:|stream|download|mal|anilist|hianime|epId|track|postMessage|iframe|embed|api/i.test(s));
-  notice("1b-zoko-docs-strings1", strings.slice(0, 25).join(" || "));
-  notice("1c-zoko-docs-strings2", strings.slice(25, 55).join(" || "));
-}
+// 2. Exact filter form HTML (opening <form ...> tag + hidden inputs + submit button)
+const filterRes = await get("https://aniwatchtv.ws/filter", { Referer: "https://aniwatchtv.ws/home" });
+const fIdx = filterRes.text.indexOf('name="type"');
+notice("2a-filter-form-head", fIdx >= 0 ? filterRes.text.slice(Math.max(0, fIdx - 500), fIdx + 350) : "none");
+const gIdx = filterRes.text.indexOf("f-genre-item");
+const endFormIdx = filterRes.text.indexOf("</form>", gIdx);
+notice("2b-filter-form-tail", endFormIdx >= 0 ? filterRes.text.slice(endFormIdx - 700, endFormIdx + 100) : "none");
 
-// 2. AniWatch /filter sort select + hidden inputs + genre items
-const filterPage = await get("https://aniwatchtv.ws/filter", { Referer: "https://aniwatchtv.ws/home" });
-const forms = [...filterPage.text.matchAll(/<form[\s\S]*?<\/form>/gi)].map((m) => m[0]);
-const filterForm = forms.find((f) => f.includes('name="type"')) ?? "";
-const sortSelect = filterForm.match(/<select[^>]*name="sort"[^>]*>([\s\S]*?)<\/select>/i)?.[0] ?? "none";
-const allInputs = [...filterForm.matchAll(/<input[^>]*>/gi)].map((m) => m[0]);
-const genresList = [...filterForm.matchAll(/class="[^"]*f-genre-item[^"]*"[^>]*data-id="([^"]+)"[^>]*>([\s\S]*?)<\/div>/gi)]
-  .map((m) => `${m[1]}:${m[2].trim()}`);
-notice("2a-filter-sort-inputs", `sort=${sortSelect} inputs=${allInputs.join(" ")}`);
-notice("2b-filter-all-genres", `count=${genresList.length} list=${genresList.join(" | ")}`);
-
-// 3. AniWatch frontend JS — search for `/api/theme` or `f-genre-item` or `search` or `filter`
+// 3. How does frontend-QO4TW5y5.js handle filter & search?
 const fe = await get("https://aniwatchtv.ws/build/assets/frontend-QO4TW5y5.js");
-const apiHits = [...fe.text.matchAll(/.{0,60}(?:api\/theme|f-genre-item|search-input|search-suggest|\/filter|\/search).{0,100}/gi)]
-  .map((m) => m[0]);
-notice("3a-fe-api-hits1", apiHits.slice(0, 10).join(" || "));
-notice("3b-fe-api-hits2", apiHits.slice(10, 22).join(" || "));
+const filterJs = [...fe.text.matchAll(/.{0,100}(?:f-genre-item|filter-form|search-suggest|result-).{0,200}/gi)].map((m) => m[0]);
+// Also find all `/api/` occurrences in frontend.js
+const allApiInFe = [...fe.text.matchAll(/.{0,50}\/api\/[a-z0-9/_-]+.{0,80}/gi)].map((m) => m[0]);
+notice("3a-fe-filter-js", filterJs.join(" || ") || "no f-genre-item in frontend.js");
+notice("3b-fe-all-apis", allApiInFe.join(" || "));
 
-// 4. Test real filter combinations on aniwatchtv.ws
-const filterTests = [];
-for (const q of [
-  "/filter?type=tv&status=releasing&sort=default",
-  "/filter?genres=action,adventure",
-  "/filter?genre=action",
-  "/filter?genres%5B%5D=action",
-  "/filter?keyword=bleach&type=tv",
-]) {
-  const r = await get(`https://aniwatchtv.ws${q}`, { Referer: "https://aniwatchtv.ws/filter" });
-  const cards = [...r.text.matchAll(/class="flw-item"/g)].length;
-  const firstTitle = r.text.match(/class="film-name"[^>]*>[\s\S]*?<a[^>]*>([^<]+)<\/a>/i)?.[1]?.trim() ?? "none";
-  filterTests.push(`${q} => ${r.status} (${cards} cards, first="${firstTitle}")`);
+// Check if /filter page has inline <script> for the filter form!
+const filterScripts = [...filterRes.text.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)]
+  .map((m) => m[1].trim())
+  .filter((s) => s.length > 0);
+notice("3c-filter-inline-scripts", filterScripts.join(" ||| "));
+
+// 4. Zoko docs URL patterns
+const zokoDocsJs = await get("https://zokoanime.video/assets/docs-sIsMGsz7.js");
+const zokoUrls = [...zokoDocsJs.text.matchAll(/.{0,40}(?:stream\/|download\/|zokoanime\.video|postMessage|channel).{0,90}/gi)].map((m) => m[0]);
+notice("4-zoko-docs-patterns", zokoUrls.slice(0, 15).join(" || "));
+
+// 5. Anikoto pagination & total count
+const anikotoP1 = await get("https://anikotoapi.site/recent-anime?page=1&per_page=100");
+let anikotoMeta = "";
+try {
+  const j = JSON.parse(anikotoP1.text);
+  anikotoMeta = JSON.stringify({ ok: j.ok, count: j.data?.length, pagination: j.pagination, domains: j.anikoto_domains, sampleKeys: Object.keys(j.data?.[0] ?? {}) });
+} catch (e) {
+  anikotoMeta = String(e);
 }
-notice("4-filter-live-tests", filterTests.join(" ;; "));
+notice("5-anikoto-pagination", anikotoMeta);
