@@ -281,21 +281,26 @@ async function probeClientScripts(watch) {
     }
   }
 
-  // The template around an endpoint string is what shows the URL shape;
-  // the bare name alone is not enough to call it.
+  // The template around an endpoint string is what shows the URL shape. Scan
+  // every script for the specific needles, skip the framework bundle (its hits
+  // are Swiper options, not API calls), and keep a wide window.
   const contexts = [];
-  for (const src of srcs.slice(0, 6)) {
+  const NEEDLES = ["episode/list", "server-name", "episode/servers", "episode/sources", "sources"];
+
+  for (const src of srcs) {
     const r = await client.get(join(src)).catch(() => null);
     if (!r || r.status !== 200) continue;
     const js = String(r.data);
-    for (const needle of ["episode/list", "server-name", "servers", "sources", "watch-progress"]) {
+    const file = src.split("/").pop();
+
+    for (const needle of NEEDLES) {
       let idx = js.indexOf(needle);
       let guard = 0;
       while (idx !== -1 && guard < 2) {
         contexts.push({
-          file: src.split("/").pop(),
+          file,
           needle,
-          code: js.slice(Math.max(0, idx - 160), idx + 160).replace(/\s+/g, " "),
+          code: js.slice(Math.max(0, idx - 220), idx + 260).replace(/\s+/g, " "),
         });
         idx = js.indexOf(needle, idx + needle.length);
         guard += 1;
@@ -304,12 +309,34 @@ async function probeClientScripts(watch) {
   }
 
   const detail = {
-    scanned,
-    apiPaths: [...apiPaths].slice(0, 40),
-    actions: [...actions].slice(0, 40),
-    contexts: contexts.slice(0, 10),
+    apiPaths: take(/(?:href|src|url|action)="(\/[a-z0-9/_-]*api[a-z0-9/_.-]*)"/gi),
+    episodePaths: take(/"(\/[a-z0-9/_-]*episode[a-z0-9/_.-]*)"/gi),
+    playerHosts: take(/https?:\/\/[a-z0-9.-]*(?:megaplay|megacloud|rabbitstream|vidsrc|t-cloud)[a-z0-9./?=&_-]*/gi),
+    scriptSrcs: take(/<script[^>]+src="([^"]+)"/gi).map((x) => x.replace(/^<script[^>]+src="/, "").replace(/"$/, "")),
+    dataAttrs: take(/data-(?:episode-id|id|server-id|slug|anime-id)="[^"]*"/gi),
+    hasNuxt: /__NUXT__/.test(html),
+    hasNextData: /__NEXT_DATA__/.test(html),
+    hasLivewire: /livewire/.test(html),
+    globalConfig: take(/(?:window\.\w+|const\s+\w*config\w*)\s*=\s*\{[\s\S]{0,600}?\};/gi, 6),
   };
-  step("scan client scripts", true, detail);
+
+  step("discover routes", true, detail);
+
+  // The player host is the useful lead: try it straight away if it is on the page.
+  const host = detail.playerHosts[0];
+  if (host) {
+    const origin = host.match(/^https?:\/\/[a-z0-9.-]+/i)?.[0];
+    if (origin) {
+      const r = await client.get(origin, { headers: { Referer: watch.url } });
+      step("GET player origin", true, {
+        origin,
+        status: r.status,
+        bytes: String(r.data).length,
+        head: String(r.data).slice(0, 200),
+      });
+    }
+  }
+
   return detail;
 }
 
