@@ -191,7 +191,7 @@ async function probeDiscovery(watch) {
     hasNuxt: /__NUXT__/.test(html),
     hasNextData: /__NEXT_DATA__/.test(html),
     hasLivewire: /livewire/.test(html),
-    globalConfig: take(/(?:window\.\w+|const\s+\w*config\w*)\s*=\s*\{[^}]{0,200}\}/gi, 3),
+    globalConfig: take(/(?:window\.\w+|const\s+\w*config\w*)\s*=\s*\{[\s\S]{0,600}?\};/gi, 6),
   };
 
   step("discover routes", true, detail);
@@ -215,15 +215,45 @@ async function probeDiscovery(watch) {
 }
 
 /**
+ * 2c. The routes this deployment actually uses.
+ *
+ * The watch page declares them in `window.hianime_ajax` / `hianime_ep_ajax`,
+ * which is the only reliable source: this is not the old hianime codebase and
+ * every /ajax/ path 404s.
+ */
+async function probeDeclaredRoutes(watch) {
+  const res = await client.get(watch.url);
+  const html = String(res.data);
+
+  const blocks = {};
+  for (const name of ["hianime_ajax", "hianime_ep_ajax"]) {
+    const m = html.match(new RegExp(`window\\.${name}\\s*=\\s*\\{[\\s\\S]*?\\};`));
+    if (!m) continue;
+    blocks[name] = m[0];
+    const urls = [...m[0].matchAll(/'([^']*\/api\/[^']*)'/g)].map((x) => x[1]);
+    blocks[name + "_urls"] = [...new Set(urls)];
+  }
+
+  step("declared route config", true, blocks);
+  return blocks;
+}
+
+/**
  * 3. The AJAX route for servers. The path moved between site generations, so try
  *    the known shapes rather than assuming one.
  */
-async function probeServers(episodeId) {
+async function probeServers(episodeId, declared = {}) {
+  // Declared first: the page knows its own route names, the older guesses did not.
+  const declaredAjax = declared.hianime_ajax_urls?.find((u) => u.includes("ajax"));
+  const declaredRest = declared.hianime_ajax_urls?.find((u) => u.includes("rest"));
+  const epRest = declared.hianime_ep_ajax_urls?.find((u) => u.includes("ajax") || u.includes("rest"));
+
   const paths = [
+    ...(epRest ? [`${epRest.replace(/\/$/, "")}`] : []),
+    ...(declaredAjax ? [`${declaredAjax}?action=servers&episodeId=${episodeId}`] : []),
+    ...(declaredRest ? [`${declaredRest.replace(/\/$/, "")}/servers?episodeId=${episodeId}`] : []),
     `/ajax/v2/episode/servers?episodeId=${episodeId}`,
     `/ajax/episode/servers?episodeId=${episodeId}`,
-    `/api/v2/episode/servers?episodeId=${episodeId}`,
-    `/ajax/v2/episode/servers/list?episodeId=${episodeId}`,
   ];
 
   const attempts = [];
@@ -340,7 +370,8 @@ try {
   const fallback = [{ slug: "primal-9050", ep: null }];
   const watch = await probeWatch([...seeds, ...fallback]);
   await probeDiscovery(watch);
-  const servers = await probeServers(watch.episodeIds[0]);
+  const declared = await probeDeclaredRoutes(watch);
+  const servers = await probeServers(watch.episodeIds[0], declared);
   const chosen = servers.find((s) => s.type !== "dub") || servers[0];
   const sources = await probeSources(chosen);
   await probeEmbed(sources);
