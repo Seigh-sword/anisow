@@ -102,46 +102,66 @@ async function probeHome() {
     htmlBytes: String(res.data).length,
     sample: found.slice(0, 3),
   });
-  return found[0];
+  return found;
 }
 
-/** 2. Watch page: episode ids live here, in the episode link list. */
-async function probeWatch(seed) {
-  const candidates = [
-    `${BASE}/watch/${seed.slug}${seed.ep ? `?ep=${seed.ep}` : ""}`,
-    `${BASE}/watch/${seed.slug}`,
-  ];
+/**
+ * 2. Watch page: episode ids live in the episode link list here.
+ *
+ * Not every anime on the home page has episodes yet (upcoming titles and fresh
+ * premieres have none), so several seeds are tried. The link shape is also
+ * sampled, because "no ?ep=" can mean "wrong page" just as easily as "no
+ * episodes", and the sample is what tells them apart.
+ */
+async function probeWatch(seeds) {
+  const attempts = [];
 
-  let last = null;
-  for (const url of candidates) {
+  for (const seed of seeds.slice(0, 6)) {
+    const url = `${BASE}/watch/${seed.slug}${seed.ep ? `?ep=${seed.ep}` : ""}`;
     const res = await client.get(url);
-    last = { url, status: res.status };
-    if (res.status !== 200) continue;
+    if (res.status !== 200) {
+      attempts.push({ url, status: res.status });
+      continue;
+    }
 
-    const $ = cheerio.load(res.data);
-    const episodes = [];
-    $('a[href*="?ep="]').each((_, el) => {
+    const html = String(res.data);
+    const $ = cheerio.load(html);
+
+    const episodeIds = [];
+    const watchHrefs = [];
+    $("a[href]").each((_, el) => {
       const href = $(el).attr("href") || "";
-      const m = href.match(/\?ep=(\d+)/);
-      if (m && !episodes.includes(m[1])) episodes.push(m[1]);
+      if (!href.includes("/watch/") && !href.includes("?ep=")) return;
+      if (watchHrefs.length < 8) watchHrefs.push(href);
+      const m = href.match(/[?&]ep=(\d+)/);
+      if (m && !episodeIds.includes(m[1])) episodeIds.push(m[1]);
     });
 
-    if (episodes.length === 0) {
-      last.detail = "no ?ep= links on the watch page";
+    // Some builds put the id in a data attribute on the list rather than a link.
+    if (episodeIds.length === 0) {
+      $("[data-id], [data-episode-id], [data-number]").each((_, el) => {
+        const id = $(el).attr("data-episode-id") || $(el).attr("data-id");
+        if (id && /^\d+$/.test(id) && !episodeIds.includes(id)) episodeIds.push(id);
+      });
+    }
+
+    if (episodeIds.length === 0) {
+      attempts.push({ url, status: res.status, episodeIds: 0, watchHrefs });
       continue;
     }
 
     step("GET /watch", true, {
       url,
       status: res.status,
-      htmlBytes: String(res.data).length,
-      episodeCount: episodes.length,
-      firstEpisodeIds: episodes.slice(0, 3),
+      htmlBytes: html.length,
+      episodeCount: episodeIds.length,
+      firstEpisodeIds: episodeIds.slice(0, 3),
+      linkShape: watchHrefs.slice(0, 3),
     });
-    return { url, episodeIds: episodes };
+    return { url, episodeIds };
   }
 
-  return fatal("GET /watch", last);
+  return fatal("GET /watch", { attempts });
 }
 
 /**
@@ -264,8 +284,11 @@ async function probeEmbed(sources) {
 
 try {
   step("dns + tls reach", true, BASE);
-  const seed = await probeHome();
-  const watch = await probeWatch(seed);
+  const seeds = await probeHome();
+
+  // A known-good fallback keeps a bad home-page sample from stopping the probe.
+  const fallback = [{ slug: "primal-9050", ep: null }];
+  const watch = await probeWatch([...seeds, ...fallback]);
   const servers = await probeServers(watch.episodeIds[0]);
   const chosen = servers.find((s) => s.type !== "dub") || servers[0];
   const sources = await probeSources(chosen);
