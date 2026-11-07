@@ -20,6 +20,7 @@ const OFFLINE_BASE = "http://127.0.0.1:9/offline-preview";
 
 export const api = createClient({
   baseUrl: DEMO ? OFFLINE_BASE : (import.meta.env.VITE_ANI_BASE ?? "/api/ani"),
+  anikotoBaseUrl: DEMO ? OFFLINE_BASE : (import.meta.env.VITE_ANIKOTO_BASE ?? "/api/anikoto"),
   timeoutMs: DEMO ? 1_500 : 20_000,
 });
 

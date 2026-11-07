@@ -2,10 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { AnimeCard } from "@anispots/core";
 
-import { search, suggest } from "../lib/data";
+import { loadAnikotoRecent, search, suggest } from "../lib/data";
 import { useAsync } from "../hooks/useAsync";
 import { Poster } from "../components/Poster";
 import { Glass } from "../components/Glass";
+import { GlassButton } from "../components/Button";
 import { ErrorState, EmptyState } from "../components/States";
 
 /**
@@ -24,6 +25,7 @@ export function Search() {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const results = useAsync(submitted || null, () => search(submitted));
+  const recent = useAsync("search:anikoto-recent", () => loadAnikotoRecent(1, 18));
 
   useEffect(() => {
     const query = text.trim();
@@ -56,7 +58,15 @@ export function Search() {
   return (
     <div>
       <header style={{ padding: "calc(18px + env(safe-area-inset-top)) var(--s-xl) var(--s-lg)" }}>
-        <h1 style={{ margin: "0 0 14px", fontSize: 26, fontWeight: 800, letterSpacing: -0.7 }}>Search</h1>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, letterSpacing: -0.7 }}>Search</h1>
+          <GlassButton
+            onClick={() => navigate(text.trim() ? `/browse?keyword=${encodeURIComponent(text.trim())}` : "/browse")}
+            style={{ padding: "7px 14px", fontSize: 12.5 }}
+          >
+            Advanced Filter
+          </GlassButton>
+        </div>
 
         <form
           onSubmit={(event) => {
@@ -188,7 +198,30 @@ export function Search() {
       )}
 
       {!results.loading && !submitted && (
-        <EmptyState title="Find something to watch" hint="Search by title, or browse by genre from the Browse tab." />
+        <div style={{ padding: "0 var(--s-xl)" }}>
+          {(recent.data?.length ?? 0) > 0 ? (
+            <>
+              <h2 style={{ margin: "0 0 var(--s-md)", fontSize: 16, fontWeight: 700, color: "var(--text-muted)" }}>
+                Recent Updates · Anikoto
+              </h2>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))",
+                  gap: 12,
+                }}
+              >
+                {recent.data!.map((card, index) => (
+                  <div key={card.id} className="rise" style={{ animationDelay: `${Math.min(index * 16, 240)}ms` }}>
+                    <Poster anime={card} fill showTitle onOpen={() => navigate(`/anime/${card.id}`)} />
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <EmptyState title="Find something to watch" hint="Search by title, or use Advanced Filter for multi-genre & season filtering." />
+          )}
+        </div>
       )}
 
       {!results.loading && submitted && list.length === 0 && !results.error && (

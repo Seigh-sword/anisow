@@ -179,19 +179,31 @@ try {
     }
   }
 
-  /* ------------------------------------------------------------ genres */
+  /* ------------------------------------------------------------ genres & filter */
 
   // `/genre/{slug}` is a 404 on this deployment; `/genres/{slug}` is the route.
-  // This is asserted because a wrong path fails *quietly* — the screen just looks
-  // empty — which is exactly how it survived the first build.
   const genrePage = await get("/api/ani/genres/action");
   const genreHtml = await genrePage.text();
   const genreCards = [...genreHtml.matchAll(/\/watch\/[a-z0-9-]+-\d+/g)].length;
   check("the genre route answers", genrePage.status === 200, `status ${genrePage.status}`);
   check("the genre route lists titles", genreCards > 5, `${genreCards} watch links`);
 
+  const filterPage = await get("/api/ani/filter?type=tv&status=completed&genre%5B%5D=action&sort=avg_score");
+  const filterHtml = await filterPage.text();
+  const filterCards = [...filterHtml.matchAll(/\/watch\/[a-z0-9-]+-\d+/g)].length;
+  check("the multi-filter route answers with titles", filterPage.status === 200 && filterCards > 5, `${filterCards} watch links`);
+
   const oldRoute = await get("/api/ani/genre/action");
   check("the old singular route is still a 404 (documented, not assumed)", oldRoute.status === 404, `status ${oldRoute.status}`);
+
+  /* ------------------------------------------------------------ anikoto api */
+
+  const anikotoRecent = await json("/api/anikoto/recent-anime?page=1&per_page=5");
+  check(
+    "anikoto proxy reaches recent-anime",
+    anikotoRecent.status === 200 && Boolean(anikotoRecent.body?.ok),
+    `status ${anikotoRecent.status}, items=${anikotoRecent.body?.data?.length ?? 0}`,
+  );
 
   /* ------------------------------------------------------------ the file proxy */
 

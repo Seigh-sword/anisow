@@ -204,6 +204,15 @@ try {
   const genres = await page.locator('[role="tab"]').count();
   check("browse lists genre chips", genres > 6, `${genres} chips`);
 
+  // Verify the multi-criteria Filter dropdowns are rendered (Type, Status, Rated, Score, Season, Language, Sort).
+  const typeSelect = page.getByLabel("Type");
+  const statusSelect = page.getByLabel("Status");
+  const sortSelect = page.getByLabel("Sort");
+  check(
+    "browse renders the full Filter panel",
+    (await typeSelect.count()) > 0 && (await statusSelect.count()) > 0 && (await sortSelect.count()) > 0,
+  );
+
   // Selecting a genre must actually filter: the URL changes and posters appear.
   if (genres > 0) {
     await page.locator('[role="tab"]').nth(2).click();

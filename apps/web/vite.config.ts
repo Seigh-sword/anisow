@@ -15,6 +15,8 @@ import react from "@vitejs/plugin-react";
  */
 
 const CATALOGUE = "https://aniwatchtv.ws";
+const ANIKOTO = "https://anikotoapi.site";
+const ZOKO = "https://zokoanime.video";
 
 /**
  * A streaming proxy for the file host.
@@ -110,6 +112,26 @@ export default defineConfig({
         headers: {
           Referer: `${CATALOGUE}/`,
           Origin: CATALOGUE,
+        },
+      },
+      "/api/anikoto": {
+        target: ANIKOTO,
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/api\/anikoto/, ""),
+        headers: {
+          Referer: `${ANIKOTO}/`,
+          Origin: ANIKOTO,
+        },
+      },
+      "/api/zoko": {
+        target: ZOKO,
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/api\/zoko/, ""),
+        headers: {
+          Referer: `${ZOKO}/`,
+          Origin: ZOKO,
         },
       },
     },

@@ -24,6 +24,7 @@ import {
   BRIDGE_SCRIPT,
   buildEmbedUrl,
   formatTime,
+  isPlayerError,
   readMessage,
   send,
   type ProgressFrame,
@@ -61,6 +62,8 @@ export function WatchScreen() {
   const [title, setTitle] = useState("");
   const [poster, setPoster] = useState<string | undefined>();
   const [description, setDescription] = useState<string | undefined>();
+  const [anilistId, setAnilistId] = useState<string | undefined>();
+  const [malId, setMalId] = useState<string | undefined>();
   const [chosen, setChosen] = useState<string | null>(episodeId ?? null);
   const [resumeAt, setResumeAt] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -84,6 +87,8 @@ export function WatchScreen() {
         setTitle(details.title);
         setPoster(details.poster);
         setDescription(details.description);
+        setAnilistId(details.anilistId);
+        setMalId(details.malId);
         setEpisodes(list);
 
         const saved = await getProgress(id);
@@ -113,9 +118,15 @@ export function WatchScreen() {
   useEffect(() => {
     if (!chosen) return;
     let cancelled = false;
+    const epObj = episodes.find((item) => item.id === chosen);
 
     setLoading(true);
-    loadServers(chosen)
+    loadServers(chosen, {
+      episodeNumber: epObj?.number,
+      anilistId,
+      malId,
+      embedUrls: epObj?.embedUrls,
+    })
       .then((list) => {
         if (cancelled) return;
         setServers(list);
@@ -132,7 +143,7 @@ export function WatchScreen() {
     return () => {
       cancelled = true;
     };
-  }, [chosen]);
+  }, [chosen, episodes, anilistId, malId]);
 
   /* ------------------------------------------------------------- progress */
 
@@ -227,7 +238,11 @@ export function WatchScreen() {
 
       // The episode's own file list is site-gated; the embed's stream URL is not
       // a file, so this asks the same endpoint the episode screen does.
-      const { links, error: linkError } = await loadDownloadLinks(current.id);
+      const { links, error: linkError } = await loadDownloadLinks(current.id, {
+        episodeNumber: current.number,
+        anilistId,
+        malId,
+      });
 
       if (linkError || links.length === 0) {
         setDownloadNote(
@@ -299,7 +314,20 @@ export function WatchScreen() {
             injectedJavaScript={BRIDGE_SCRIPT}
             injectedJavaScriptBeforeContentLoaded={BRIDGE_SCRIPT}
             onMessage={(event) => {
-              const value = readMessage(event.nativeEvent.data);
+              const raw = event.nativeEvent.data;
+              const err = isPlayerError(raw);
+              if (err && servers.length > 1) {
+                const nextIdx = (serverIndex + 1) % servers.length;
+                if (nextIdx !== serverIndex) {
+                  setServerIndex(nextIdx);
+                  setDownloadNote(
+                    `Auto-selected ${servers[nextIdx]!.name} (${servers[nextIdx]!.audio.toUpperCase()}) because the previous server was unavailable.`,
+                  );
+                }
+                return;
+              }
+
+              const value = readMessage(raw);
               if (!value) return;
               lastFrame.current = value;
               setFrame(value);

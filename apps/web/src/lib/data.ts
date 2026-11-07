@@ -1,4 +1,4 @@
-import type { AnimeCard, HomeRails } from "@anispots/core";
+import type { AnimeCard, FilterParams, HomeRails } from "@anispots/core";
 import { api, unwrap } from "./api";
 import { cached } from "./cache";
 import { getContinueWatching, getDownloads } from "./library";
@@ -104,8 +104,15 @@ export const loadEpisodes = async (animeId: string) =>
  * Not cached: the site rotates embeds and a stale URL is a broken player. It is
  * one small request, and the player already owns its own loading state.
  */
-export const loadServers = async (episodeId: string) =>
-  attempt(() => api.servers(episodeId).then(unwrap), demoServers);
+export const loadServers = async (
+  episodeId: string,
+  context?: {
+    episodeNumber?: number;
+    anilistId?: string;
+    malId?: string;
+    embedUrls?: { sub?: string; dub?: string };
+  },
+) => attempt(() => api.servers(episodeId, context).then(unwrap), demoServers);
 
 /**
  * Download links for one episode.
@@ -113,9 +120,20 @@ export const loadServers = async (episodeId: string) =>
  * The site gates this behind an account setting, so `{status:false}` is a normal
  * answer rather than a failure — the sheet explains it instead of looking broken.
  */
-export async function loadDownloadLinks(episodeId: string) {
+export async function loadDownloadLinks(
+  episodeId: string,
+  context?: {
+    episodeNumber?: number;
+    anilistId?: string;
+    malId?: string;
+    track?: "sub" | "dub";
+  },
+) {
   try {
-    const data = await attempt(() => api.downloads(episodeId).then(unwrap), demoDownloadLinks);
+    const data = await attempt(
+      () => api.downloads(episodeId, context).then(unwrap),
+      demoDownloadLinks,
+    );
     return { links: data, error: null as string | null };
   } catch (cause) {
     return { links: [], error: cause instanceof Error ? cause.message : String(cause) };
@@ -141,4 +159,19 @@ export const loadGenres = async () =>
 export const loadBrowse = async (category: string, page = 1) =>
   cached(`browse:${category}:${page}`, () =>
     attempt(() => api.browse(category, page).then(unwrap), demoBrowse),
+  );
+
+export const loadFilter = async (params: FilterParams) => {
+  const key = `filter:${JSON.stringify(params)}`;
+  return cached(key, () =>
+    attempt(() => api.filter(params).then(unwrap), () => {
+      if (params.keyword) return demoSearch(params.keyword);
+      return demoBrowse();
+    }),
+  );
+};
+
+export const loadAnikotoRecent = async (page = 1, perPage = 24) =>
+  cached(`anikoto:recent:${page}:${perPage}`, () =>
+    attempt(() => api.anikotoRecent(page, perPage).then(unwrap), demoBrowse),
   );

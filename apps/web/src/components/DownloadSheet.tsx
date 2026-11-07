@@ -28,6 +28,8 @@ export interface DownloadTarget {
   animeTitle: string;
   coverUrl?: string;
   description?: string;
+  anilistId?: string;
+  malId?: string;
 }
 
 type EpisodeLinks = { links: DownloadLink[]; error: string | null; loading: boolean };
@@ -70,7 +72,11 @@ export function DownloadSheet({
         [episode.id]: { links: [], error: null, loading: true },
       }));
 
-      loadDownloadLinks(episode.id)
+      loadDownloadLinks(episode.id, {
+        episodeNumber: episode.number,
+        anilistId: target.anilistId,
+        malId: target.malId,
+      })
         .then(({ links: found, error }) => {
           if (cancelled) return;
           setLinks((current) => ({ ...current, [episode.id]: { links: found, error, loading: false } }));

@@ -9,6 +9,8 @@ import { useAsync } from "../hooks/useAsync";
 import {
   buildEmbedUrl,
   formatTime,
+  onPlayerEnded,
+  onPlayerError,
   onProgress,
   send,
   startDemoPlayback,
@@ -52,6 +54,8 @@ export function Watch() {
 
   const [frame, setFrame] = useState<ProgressFrame>({ currentTime: 0, duration: 0 });
   const [serverIndex, setServerIndex] = useState(0);
+  const [failedServers, setFailedServers] = useState<Set<number>>(new Set());
+  const [switchNotice, setSwitchNotice] = useState<string | null>(null);
   const [showServers, setShowServers] = useState(false);
   const [showEpisodes, setShowEpisodes] = useState(false);
   const [showDownloads, setShowDownloads] = useState(false);
@@ -87,14 +91,79 @@ export function Watch() {
   }, [saved, current]);
 
   const servers = useAsync(
-    current ? `servers:${current.id}` : null,
-    () => loadServers(current!.id),
-    [current?.id],
+    current
+      ? `servers:${current.id}:${details.data?.malId ?? ""}:${details.data?.anilistId ?? ""}`
+      : null,
+    () =>
+      loadServers(current!.id, {
+        episodeNumber: current!.number,
+        anilistId: details.data?.anilistId,
+        malId: details.data?.malId,
+        embedUrls: current!.embedUrls,
+      }),
+    [current?.id, details.data?.anilistId, details.data?.malId],
   );
 
   const serverList: Server[] = servers.data ?? [];
   const server: Server | undefined = serverList[serverIndex] ?? serverList[0];
   const isSample = Boolean(server?.embedUrl.startsWith("demo:"));
+
+  // Honor preferred server provider/audio when a new serverList arrives, or auto-select the available one.
+  useEffect(() => {
+    setFailedServers(new Set());
+    if (serverList.length === 0) return;
+
+    const pref = window.localStorage.getItem("anispots.preferredServer");
+    if (pref) {
+      try {
+        const { name, audio } = JSON.parse(pref) as { name?: string; audio?: string };
+        const exact = serverList.findIndex(
+          (s) => s.name.toLowerCase() === name?.toLowerCase() && s.audio === audio,
+        );
+        if (exact >= 0) {
+          setServerIndex(exact);
+          return;
+        }
+        const byAudio = serverList.findIndex((s) => s.audio === audio);
+        if (byAudio >= 0) {
+          setServerIndex(byAudio);
+          setSwitchNotice(
+            `${name ?? "Preferred server"} does not have this episode — auto-selected ${serverList[byAudio]!.name} (${serverList[byAudio]!.audio.toUpperCase()}).`,
+          );
+          return;
+        }
+      } catch {
+        // Ignore malformed preference
+      }
+    }
+    setServerIndex(0);
+  }, [serverList]);
+
+  // Auto-failover when the active embed reports a playback error and another server is available.
+  useEffect(() => {
+    if (serverList.length <= 1) return;
+    return onPlayerError(() => {
+      setFailedServers((prev) => {
+        const updated = new Set(prev);
+        updated.add(serverIndex);
+        const nextIdx = serverList.findIndex((_, idx) => idx !== serverIndex && !updated.has(idx));
+        if (nextIdx >= 0) {
+          const target = serverList[nextIdx]!;
+          setServerIndex(nextIdx);
+          setSwitchNotice(
+            `Switched automatically to ${target.name} (${target.audio.toUpperCase()}) because the previous server was unavailable.`,
+          );
+        }
+        return updated;
+      });
+    });
+  }, [serverList, serverIndex]);
+
+  useEffect(() => {
+    if (!switchNotice) return;
+    const t = window.setTimeout(() => setSwitchNotice(null), 5000);
+    return () => window.clearTimeout(t);
+  }, [switchNotice]);
 
   /* ------------------------------------------------------------ offline */
 
@@ -641,6 +710,94 @@ export function Watch() {
             Details
           </GlassButton>
         </div>
+
+        {/* Inline Server Selector Pill Bar: when multiple servers are available, let the user switch with one tap */}
+        {serverList.length > 0 && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 6,
+              padding: "8px 12px",
+              borderRadius: 14,
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--text-faint)", marginRight: 4 }}>
+              SERVER:
+            </span>
+            {serverList.map((item, idx) => {
+              const active = idx === serverIndex;
+              const failed = failedServers.has(idx);
+              return (
+                <button
+                  key={`${item.name}-${item.audio}-${idx}`}
+                  type="button"
+                  onClick={() => {
+                    setServerIndex(idx);
+                    savedAt.current = 0;
+                    try {
+                      window.localStorage.setItem(
+                        "anispots.preferredServer",
+                        JSON.stringify({ name: item.name, audio: item.audio }),
+                      );
+                    } catch {}
+                  }}
+                  className="pressable"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "5px 10px",
+                    borderRadius: 999,
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    border: active
+                      ? "1px solid rgba(0,123,255,0.75)"
+                      : "1px solid rgba(255,255,255,0.12)",
+                    background: active
+                      ? "linear-gradient(135deg, rgba(0,123,255,0.28), rgba(255,0,255,0.22))"
+                      : "rgba(255,255,255,0.05)",
+                    color: active ? "#fff" : "var(--text-muted)",
+                    opacity: failed ? 0.5 : 1,
+                  }}
+                >
+                  <span>{item.name}</span>
+                  <span
+                    style={{
+                      padding: "1px 6px",
+                      borderRadius: 999,
+                      fontSize: 9.5,
+                      fontWeight: 800,
+                      background: item.audio.startsWith("d") ? "rgba(255,0,255,0.22)" : "rgba(0,123,255,0.22)",
+                      color: item.audio.startsWith("d") ? "#FF8CF6" : "#7EC0FF",
+                    }}
+                  >
+                    {item.audio.toUpperCase()}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {switchNotice && (
+          <div
+            style={{
+              padding: "8px 12px",
+              borderRadius: 12,
+              background: "rgba(0,123,255,0.14)",
+              border: "1px solid rgba(0,123,255,0.35)",
+              fontSize: 12,
+              color: "var(--text-muted)",
+            }}
+          >
+            {switchNotice}
+          </div>
+        )}
       </div>
 
       {/* ------------------------------------------------------------ sheets */}
@@ -733,6 +890,8 @@ export function Watch() {
             animeTitle: details.data.title,
             coverUrl: details.data.poster,
             description: details.data.description,
+            anilistId: details.data.anilistId,
+            malId: details.data.malId,
           }}
           episodes={list}
         />

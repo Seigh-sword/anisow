@@ -29,8 +29,12 @@ export interface ProgressFrame {
 }
 
 type Handler = (frame: ProgressFrame) => void;
+type ErrorHandler = (reason: string) => void;
+type EndedHandler = () => void;
 
 const handlers = new Set<Handler>();
+const errorHandlers = new Set<ErrorHandler>();
+const endedHandlers = new Set<EndedHandler>();
 let bound = false;
 
 /**
@@ -98,16 +102,44 @@ function bind(): void {
   bound = true;
 
   window.addEventListener("message", (event: MessageEvent) => {
-    const data = event.data as { channel?: string; type?: string; currentTime?: number; duration?: number } | null;
+    const data = event.data as {
+      channel?: string;
+      type?: string;
+      currentTime?: number;
+      position?: number;
+      duration?: number;
+      reason?: string;
+      message?: string;
+    } | null;
     if (!data || typeof data !== "object") return;
     if (data.channel !== PLAYER_CHANNEL) return;
-    if (data.type !== "progress") return;
 
-    const frame: ProgressFrame = {
-      currentTime: Number(data.currentTime ?? 0) || 0,
-      duration: Number(data.duration ?? 0) || 0,
-    };
-    for (const handler of handlers) handler(frame);
+    if (
+      data.type === "progress" ||
+      data.type === "time" ||
+      data.type === "watching-log" ||
+      data.type === "seeked" ||
+      data.type === "state" ||
+      data.type === "ready"
+    ) {
+      const current = Number(data.currentTime ?? data.position ?? 0) || 0;
+      const duration = Number(data.duration ?? 0) || 0;
+      if (duration > 0 || current > 0) {
+        const frame: ProgressFrame = { currentTime: current, duration };
+        for (const handler of handlers) handler(frame);
+      }
+      return;
+    }
+
+    if (data.type === "error") {
+      const reason = String(data.message ?? data.reason ?? "Stream unavailable on this server");
+      for (const handler of errorHandlers) handler(reason);
+      return;
+    }
+
+    if (data.type === "ended" || data.type === "complete") {
+      for (const handler of endedHandlers) handler();
+    }
   });
 }
 
@@ -116,6 +148,20 @@ export function onProgress(handler: Handler): () => void {
   bind();
   handlers.add(handler);
   return () => handlers.delete(handler);
+}
+
+/** Listen for player error events (`{ channel: "zokoanime", type: "error" }`) so we can auto-switch servers. */
+export function onPlayerError(handler: ErrorHandler): () => void {
+  bind();
+  errorHandlers.add(handler);
+  return () => errorHandlers.delete(handler);
+}
+
+/** Listen for episode completion (`ended` / `complete`). */
+export function onPlayerEnded(handler: EndedHandler): () => void {
+  bind();
+  endedHandlers.add(handler);
+  return () => endedHandlers.delete(handler);
 }
 
 /** The origins an embed may legitimately live on; messages go to these only. */
@@ -177,7 +223,12 @@ export function buildEmbedUrl(
   try {
     const url = new URL(base);
     url.searchParams.set("autostart", autoplay ? "1" : "0");
+    url.searchParams.set("autoplay", autoplay ? "1" : "0");
     url.searchParams.set("autonext", autonext ? "1" : "0");
+    url.searchParams.set("asi", "1");
+    if (url.hostname.includes("zokoanime")) {
+      url.searchParams.set("color", "007BFF");
+    }
     if (startAt > 5) url.searchParams.set("time", String(Math.floor(startAt)));
     return url.toString();
   } catch {

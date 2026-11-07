@@ -86,13 +86,41 @@ export function readMessage(raw: string): ProgressFrame | null {
       channel?: string;
       type?: string;
       currentTime?: number;
+      position?: number;
       duration?: number;
     };
-    if (data.channel !== PLAYER_CHANNEL || data.type !== "progress") return null;
+    if (data.channel !== PLAYER_CHANNEL) return null;
+    if (
+      data.type !== "progress" &&
+      data.type !== "time" &&
+      data.type !== "watching-log" &&
+      data.type !== "seeked" &&
+      data.type !== "state" &&
+      data.type !== "ready"
+    ) {
+      return null;
+    }
     return {
-      currentTime: Number(data.currentTime ?? 0) || 0,
+      currentTime: Number(data.currentTime ?? data.position ?? 0) || 0,
       duration: Number(data.duration ?? 0) || 0,
     };
+  } catch {
+    return null;
+  }
+}
+
+export function isPlayerError(raw: string): string | null {
+  try {
+    const data = JSON.parse(raw) as {
+      channel?: string;
+      type?: string;
+      message?: string;
+      reason?: string;
+    };
+    if (data.channel === PLAYER_CHANNEL && data.type === "error") {
+      return String(data.message ?? data.reason ?? "Stream unavailable on this server");
+    }
+    return null;
   } catch {
     return null;
   }
@@ -111,8 +139,11 @@ export function buildEmbedUrl(
   const { startAt = 0, autoplay = true, autonext = true } = options;
   const params = [
     `autostart=${autoplay ? 1 : 0}`,
+    `autoplay=${autoplay ? 1 : 0}`,
     `autonext=${autonext ? 1 : 0}`,
+    `asi=1`,
   ];
+  if (base.includes("zokoanime")) params.push("color=007BFF");
   if (startAt > 5) params.push(`time=${Math.floor(startAt)}`);
   return `${base}${base.includes("?") ? "&" : "?"}${params.join("&")}`;
 }

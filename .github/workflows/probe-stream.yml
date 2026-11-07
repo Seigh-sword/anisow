@@ -24,25 +24,7 @@ permissions:
   contents: read
 
 jobs:
-  apis:
-    name: Probe anikoto, zoko, and filter
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
-      - name: Run API & filter probe
-        run: node --experimental-strip-types tools/probe/apis.mjs
-
-  # The genre route used to be *probed* here, because it was unknown. It is now
-  # asserted in `verify.yml` (the smoke job) against `/genres/{slug}`, which is
-  # the path this deployment actually serves. A probe that only reports is not
-  # enough for something the UI depends on.
+  # The genre, filter, and Anikoto routes are asserted in `verify.yml` (the smoke job).
   probe:
     name: Resolve an episode
     runs-on: ubuntu-latest

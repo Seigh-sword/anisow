@@ -53,8 +53,13 @@ export function parseServers(fragment: FragmentResponse): Server[] {
 
     const audio = normaliseAudio(item.attrs["data-type"]);
     const label = item.attrs["data-server-name"] || text(item.inner) || audio;
+    const provider = embedUrl.includes("zokoanime")
+      ? "zoko"
+      : embedUrl.includes("megaplay")
+        ? "megaplay"
+        : undefined;
 
-    servers.push({ name: label, audio, embedUrl });
+    servers.push({ name: label, audio, embedUrl, ...(provider ? { provider } : {}) });
   }
 
   return servers;

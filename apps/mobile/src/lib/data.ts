@@ -1,4 +1,4 @@
-import type { AnimeCard, HomeRails } from "@anispots/core";
+import type { AnimeCard, FilterParams, HomeRails } from "@anispots/core";
 import { api, unwrap } from "./api";
 import { getContinueWatching, getDownloads } from "./storage";
 
@@ -17,17 +17,36 @@ export const loadDetails = async (animeId: string) => unwrap(await api.details(a
 
 export const loadEpisodes = async (animeId: string) => unwrap(await api.episodes(animeId));
 
-export const loadServers = async (episodeId: string) => unwrap(await api.servers(episodeId));
+export const loadServers = async (
+  episodeId: string,
+  context?: {
+    episodeNumber?: number;
+    anilistId?: string;
+    malId?: string;
+    embedUrls?: { sub?: string; dub?: string };
+  },
+) => unwrap(await api.servers(episodeId, context));
 
 export const loadGenres = async () => unwrap(await api.genres());
 
 export const loadBrowse = async (category: string, page = 1) =>
   unwrap(await api.browse(category, page));
 
+export const loadFilter = async (params: FilterParams) =>
+  unwrap(await api.filter(params));
+
 export const search = async (query: string) => unwrap(await api.search(query));
 
-export async function loadDownloadLinks(episodeId: string) {
-  const result = await api.downloads(episodeId);
+export async function loadDownloadLinks(
+  episodeId: string,
+  context?: {
+    episodeNumber?: number;
+    anilistId?: string;
+    malId?: string;
+    track?: "sub" | "dub";
+  },
+) {
+  const result = await api.downloads(episodeId, context);
   return result.ok
     ? { links: result.data, error: null as string | null }
     : { links: [], error: result.error };

@@ -64,6 +64,31 @@ export interface AnimeDetails extends AnimeCard {
   related: AnimeCard[];
   recommendations: AnimeCard[];
   totalEpisodes: number;
+  /** AniList / MAL IDs when known, used to build ZokoAnime stream/download URLs. */
+  anilistId?: string;
+  malId?: string;
+}
+
+/**
+ * Multi-criteria filter parameters matching the `/filter` system on AniWatch.
+ */
+export interface FilterParams {
+  keyword?: string;
+  type?: string;
+  status?: string;
+  rating?: string;
+  score?: string;
+  season?: string;
+  language?: string;
+  sort?: string;
+  startYear?: string;
+  startMonth?: string;
+  startDay?: string;
+  endYear?: string;
+  endMonth?: string;
+  endDay?: string;
+  genres?: string[];
+  page?: number;
 }
 
 /**
@@ -78,6 +103,11 @@ export interface Episode {
   title?: string;
   /** True for the episode the page opened on, when known. */
   isFiller?: boolean;
+  /** Direct MegaPlay / Anikoto embed URLs when sourced from Anikoto API. */
+  embedUrls?: {
+    sub?: string;
+    dub?: string;
+  };
 }
 
 /** A player the episode can run in. */
@@ -85,10 +115,12 @@ export interface Server {
   name: string;
   audio: AudioType;
   /**
-   * The embed URL, obtained by base64-decoding the site's `data-hash`.
-   * This is a page, not a media file; see PROBE-FINDINGS.md.
+   * The embed URL, obtained by base64-decoding the site's `data-hash`,
+   * from Anikoto (`megaplay.buzz`), or from ZokoAnime (`zokoanime.video`).
    */
   embedUrl: string;
+  /** Which provider family backs this server (`zoko` | `anikoto` | `megaplay`). */
+  provider?: "zoko" | "anikoto" | "megaplay";
 }
 
 /** A downloadable file for one episode. */

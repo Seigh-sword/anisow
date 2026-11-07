@@ -24,6 +24,8 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(fileURLToPath(new URL("../dist", import.meta.url)));
 const CATALOGUE = process.env.ANI_BASE ?? "https://aniwatchtv.ws";
+const ANIKOTO = process.env.ANIKOTO_BASE ?? "https://anikotoapi.site";
+const ZOKO = process.env.ZOKO_BASE ?? "https://zokoanime.video";
 const PORT = Number(process.env.PORT ?? 4173);
 const HOST = process.env.HOST ?? "0.0.0.0";
 
@@ -50,6 +52,8 @@ const FILE_HOSTS = [
   "mp4upload.com",
   "zokoanime.video",
   "megaplay.buzz",
+  "nekostream.site",
+  "anipixcdn.co",
 ];
 
 const MIME = {
@@ -198,11 +202,90 @@ async function proxyDownload(request, response) {
   }
 }
 
+/**
+ * In-memory cache for Anikoto API responses (120 seconds TTL) so the backend
+ * respects the 60 requests / 120s rate limit and never exposes the user to 429s.
+ */
+const anikotoCache = new Map();
+
+async function proxyAnikoto(request, response) {
+  const url = new URL(request.url ?? "/", "http://localhost");
+  const target = `${ANIKOTO}${url.pathname.replace(/^\/api\/anikoto/, "")}${url.search}`;
+
+  const cached = anikotoCache.get(target);
+  if (cached && Date.now() - cached.time < 120_000) {
+    response.statusCode = 200;
+    response.setHeader("Content-Type", "application/json; charset=utf-8");
+    response.setHeader("Cache-Control", "public, max-age=120");
+    response.end(cached.body);
+    return;
+  }
+
+  try {
+    const upstream = await fetch(target, {
+      headers: {
+        "User-Agent": UA,
+        Accept: "application/json",
+        Referer: `${ANIKOTO}/`,
+      },
+      redirect: "follow",
+    });
+
+    const body = await upstream.text();
+    if (upstream.ok) {
+      anikotoCache.set(target, { time: Date.now(), body });
+    }
+    response.statusCode = upstream.status;
+    response.setHeader("Content-Type", upstream.headers.get("content-type") ?? "application/json; charset=utf-8");
+    response.setHeader("Cache-Control", "public, max-age=120");
+    response.end(body);
+  } catch (cause) {
+    response.statusCode = 502;
+    response.setHeader("Content-Type", "application/json; charset=utf-8");
+    response.end(JSON.stringify({ ok: false, error: cause instanceof Error ? cause.message : "Anikoto upstream failed" }));
+  }
+}
+
+async function proxyZoko(request, response) {
+  const url = new URL(request.url ?? "/", "http://localhost");
+  const target = `${ZOKO}${url.pathname.replace(/^\/api\/zoko/, "")}${url.search}`;
+
+  try {
+    const upstream = await fetch(target, {
+      headers: {
+        "User-Agent": UA,
+        Accept: "application/json",
+        Referer: `${ZOKO}/`,
+      },
+      redirect: "follow",
+    });
+
+    const body = await upstream.text();
+    response.statusCode = upstream.status;
+    response.setHeader("Content-Type", upstream.headers.get("content-type") ?? "application/json; charset=utf-8");
+    response.end(body);
+  } catch (cause) {
+    response.statusCode = 502;
+    response.setHeader("Content-Type", "application/json; charset=utf-8");
+    response.end(JSON.stringify({ ok: false, error: cause instanceof Error ? cause.message : "Zoko upstream failed" }));
+  }
+}
+
 createServer((request, response) => {
   const path = (request.url ?? "/").split("?")[0];
 
   if (path === "/api/ani" || path.startsWith("/api/ani/")) {
     void proxyCatalogue(request, response);
+    return;
+  }
+
+  if (path === "/api/anikoto" || path.startsWith("/api/anikoto/")) {
+    void proxyAnikoto(request, response);
+    return;
+  }
+
+  if (path === "/api/zoko" || path.startsWith("/api/zoko/")) {
+    void proxyZoko(request, response);
     return;
   }
 

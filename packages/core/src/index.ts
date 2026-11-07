@@ -7,7 +7,13 @@
  */
 
 export * from "./model.ts";
-export { AniWatchClient, createClient, DEFAULT_BASE } from "./api/client.ts";
+export {
+  AniWatchClient,
+  createClient,
+  DEFAULT_ANIKOTO_BASE,
+  DEFAULT_BASE,
+  DEFAULT_ZOKO_BASE,
+} from "./api/client.ts";
 export type { ClientOptions, Result } from "./api/client.ts";
 export {
   decodeEmbedHash,

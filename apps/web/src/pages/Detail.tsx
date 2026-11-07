@@ -304,6 +304,8 @@ export function Detail() {
           animeTitle: anime.title,
           coverUrl: anime.poster,
           description: anime.description,
+          anilistId: anime.anilistId,
+          malId: anime.malId,
         }}
         episodes={list}
       />
