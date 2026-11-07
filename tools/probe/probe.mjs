@@ -165,6 +165,56 @@ async function probeWatch(seeds) {
 }
 
 /**
+ * 2b. Discovery: this deployment is not the old hianime codebase (its /ajax
+ *     routes 404), so the route names have to come from the page itself. Every
+ *     candidate is reported rather than assumed.
+ */
+async function probeDiscovery(watch) {
+  const res = await client.get(watch.url);
+  const html = String(res.data);
+
+  const take = (re, limit = 6) => {
+    const out = new Set();
+    for (const m of html.matchAll(re)) {
+      out.add(m[0].replace(/&amp;/g, "&"));
+      if (out.size >= limit) break;
+    }
+    return [...out];
+  };
+
+  const detail = {
+    apiPaths: take(/(?:href|src|url|action)="(\/[a-z0-9/_-]*api[a-z0-9/_.-]*)"/gi),
+    episodePaths: take(/"(\/[a-z0-9/_-]*episode[a-z0-9/_.-]*)"/gi),
+    playerHosts: take(/https?:\/\/[a-z0-9.-]*(?:megaplay|megacloud|rabbitstream|vidsrc|t-cloud)[a-z0-9./?=&_-]*/gi),
+    scriptSrcs: take(/<script[^>]+src="([^"]+)"/gi).map((x) => x.replace(/^<script[^>]+src="/, "").replace(/"$/, "")),
+    dataAttrs: take(/data-(?:episode-id|id|server-id|slug|anime-id)="[^"]*"/gi),
+    hasNuxt: /__NUXT__/.test(html),
+    hasNextData: /__NEXT_DATA__/.test(html),
+    hasLivewire: /livewire/.test(html),
+    globalConfig: take(/(?:window\.\w+|const\s+\w*config\w*)\s*=\s*\{[^}]{0,200}\}/gi, 3),
+  };
+
+  step("discover routes", true, detail);
+
+  // The player host is the useful lead: try it straight away if it is on the page.
+  const host = detail.playerHosts[0];
+  if (host) {
+    const origin = host.match(/^https?:\/\/[a-z0-9.-]+/i)?.[0];
+    if (origin) {
+      const r = await client.get(origin, { headers: { Referer: watch.url } });
+      step("GET player origin", true, {
+        origin,
+        status: r.status,
+        bytes: String(r.data).length,
+        head: String(r.data).slice(0, 200),
+      });
+    }
+  }
+
+  return detail;
+}
+
+/**
  * 3. The AJAX route for servers. The path moved between site generations, so try
  *    the known shapes rather than assuming one.
  */
@@ -289,6 +339,7 @@ try {
   // A known-good fallback keeps a bad home-page sample from stopping the probe.
   const fallback = [{ slug: "primal-9050", ep: null }];
   const watch = await probeWatch([...seeds, ...fallback]);
+  await probeDiscovery(watch);
   const servers = await probeServers(watch.episodeIds[0]);
   const chosen = servers.find((s) => s.type !== "dub") || servers[0];
   const sources = await probeSources(chosen);
