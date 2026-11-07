@@ -10,7 +10,7 @@
     "ios": "expo start --ios",
     "typecheck": "tsc --noEmit",
     "export:bundle": "expo export --platform android --output-dir dist-bundle",
-    "icons": "node ../../tools/build/make-icons.mjs"
+    "icons": "node ../../tools/assets/make-icons.mjs"
   },
   "dependencies": {
     "@anispots/core": "*",

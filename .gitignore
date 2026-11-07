@@ -3,10 +3,15 @@ node_modules/
 .pnp/
 .pnp.js
 
-# Build output
-dist/
-build/
-out/
+# Build output. Anchored where the name is ambiguous: `tools/build/` was a
+# source directory until this rule swallowed it, and losing a file to .gitignore
+# is silent — `git status` simply does not mention it.
+/dist/
+/build/
+/out/
+apps/*/dist/
+apps/*/build/
+apps/*/out/
 *.tsbuildinfo
 .expo/
 .expo-shared/
