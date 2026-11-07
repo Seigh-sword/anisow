@@ -30,11 +30,26 @@ const BASE = `http://127.0.0.1:${PORT}`;
 const results = [];
 let failures = 0;
 
+/**
+ * Emit each result as a GitHub annotation as well as to stdout.
+ *
+ * The job log is a blob download that some environments cannot reach, and the
+ * annotations API is the one place the verdicts are always readable — both by a
+ * reviewer on the PR and by anything checking the run afterwards.
+ */
+const IN_ACTIONS = process.env.GITHUB_ACTIONS === "true";
+
 function check(name, condition, detail = "") {
   const ok = Boolean(condition);
   if (!ok) failures += 1;
   results.push({ name, ok, detail });
+
+  const safe = String(detail).replace(/[\r\n]+/g, " ").slice(0, 600);
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? `  — ${detail}` : ""}`);
+
+  if (IN_ACTIONS) {
+    console.log(`${ok ? "::notice" : "::error"} title=${name}::${safe}`);
+  }
 }
 
 async function get(path, init) {
