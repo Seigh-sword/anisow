@@ -173,8 +173,14 @@ try {
   check("the download sheet has Select all", (await selectAll.count()) > 0);
   check("Export sits next to Cancel", (await exportButton.count()) > 0 && (await cancelButton.count()) > 0);
 
+  // The sample sheet resolves links immediately; give the state a beat to land.
   await selectAll.click();
-  await page.waitForTimeout(300);
+  await page.waitForFunction(
+    () => /Export \(\d+\)/.test(document.body.innerText),
+    undefined,
+    { timeout: 8000 },
+  ).catch(() => {});
+
   const exportLabel = (await exportButton.first().textContent()) ?? "";
   check("Select all fills the Export count", /\(\d+\)/.test(exportLabel), exportLabel.trim());
 
@@ -190,6 +196,15 @@ try {
   await page.waitForSelector("h1");
   const genres = await page.locator('[role="tab"]').count();
   check("browse lists genre chips", genres > 6, `${genres} chips`);
+
+  // Selecting a genre must actually filter: the URL changes and posters appear.
+  if (genres > 0) {
+    await page.locator('[role="tab"]').nth(2).click();
+    await page.waitForURL(/\/browse\//, { timeout: 8000 });
+    await page.waitForSelector(".poster", { timeout: 8000 });
+    const filtered = await page.locator(".poster").count();
+    check("selecting a genre loads a shelf", filtered > 0, `${filtered} posters at ${page.url()}`);
+  }
 
   await page.goto(`${BASE}/watchlist`, { waitUntil: "networkidle" });
   const watchlistHeading = (await page.locator("h1").first().textContent())?.trim();

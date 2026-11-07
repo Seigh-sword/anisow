@@ -8,13 +8,26 @@ import { createClient, type Result } from "@anispots/core";
  * proxy does in production. In the native app there is no origin, so the client
  * talks to the site itself.
  */
+/**
+ * `VITE_DEMO=1` points the client at a host that cannot exist, which makes the
+ * preview build deterministic: every request fails fast and the sample data
+ * answers. Without it the build talks to the real catalogue through
+ * `VITE_ANI_BASE` (or the same-origin proxy). It is a build flag, not a runtime
+ * switch, so a deployed bundle can never end up in demo mode by configuration.
+ */
+const DEMO = import.meta.env.VITE_DEMO === "1";
+const OFFLINE_BASE = "http://127.0.0.1:9/offline-preview";
+
 export const api = createClient({
-  baseUrl: import.meta.env.VITE_ANI_BASE ?? "/api/ani",
-  timeoutMs: 20_000,
+  baseUrl: DEMO ? OFFLINE_BASE : (import.meta.env.VITE_ANI_BASE ?? "/api/ani"),
+  timeoutMs: DEMO ? 1_500 : 20_000,
 });
 
 /** True when the app is talking through the dev proxy rather than the real host. */
 export const usingProxy = api.baseUrl === "/api/ani";
+
+/** True in the deterministic preview build. */
+export const demoBuild = DEMO;
 
 /**
  * Unwrap a `Result` into a value, or throw the error message.
