@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
+import android.widget.TextView
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -25,6 +26,13 @@ import com.xo.anilab.ui.post.PostActivity
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+/**
+ * Text search plus a genre row.
+ *
+ * The genre chips are built here rather than in XML because they come from
+ * `/categories`, and a selected chip is just a different background on a plain
+ * `TextView`. They are only inflated when there is something to filter.
+ */
 class SearchFragment : Fragment() {
 
     private var _binding: FragmentSearchBinding? = null
@@ -80,9 +88,51 @@ class SearchFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch { viewModel.genres.collect(::renderChips) }
+                launch { viewModel.selectedGenre.collect(::renderChipsSelected) }
                 launch { viewModel.posts.collectLatest(::render) }
                 launch { viewModel.appending.collect { binding.loader.setVisible(it) } }
             }
+        }
+    }
+
+    private fun renderChips(genres: List<SearchViewModel.Genre>) {
+        binding.filterRow.removeAllViews()
+        binding.filterScroll.setVisible(genres.isNotEmpty())
+
+        val gap = resources.getDimensionPixelSize(R.dimen.chip_gap)
+
+        genres.forEach { genre ->
+            // The four-argument constructor is the only way a code-built view
+            // gets a style: inflation is what normally applies it.
+            val chip = TextView(requireContext(), null, 0, R.style.Widget_TryAnime_Chip).apply {
+                text = genre.name ?: getString(R.string.filter_all)
+                tag = genre.id
+                layoutParams = ViewGroup.MarginLayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ).apply { marginEnd = gap }
+                setOnClickListener { viewModel.selectGenre(genre.id) }
+            }
+            binding.filterRow.addView(chip)
+        }
+
+        renderChipsSelected(viewModel.selectedGenre.value)
+    }
+
+    /** Selected chip gets the gradient; the rest keep the glass pill. */
+    private fun renderChipsSelected(selectedId: Int?) {
+        for (index in 0 until binding.filterRow.childCount) {
+            val chip = binding.filterRow.getChildAt(index) as? TextView ?: continue
+            val isSelected = chip.tag == selectedId
+            chip.setBackgroundResource(
+                if (isSelected) R.drawable.bg_filter_chip_selected else R.drawable.bg_filter_chip
+            )
+            chip.setTextColor(
+                requireContext().getColor(
+                    if (isSelected) R.color.color_on_brand else R.color.filter_chip_text
+                )
+            )
         }
     }
 
@@ -93,6 +143,8 @@ class SearchFragment : Fragment() {
         if (result !is Resource.Success) binding.empty.setVisible(false)
 
         val hasQuery = viewModel.query.value.isNotEmpty()
+        val hasGenre = viewModel.selectedGenre.value != null
+        val browsing = hasQuery || hasGenre
 
         when (result) {
             is Resource.Loading -> Unit
@@ -101,16 +153,12 @@ class SearchFragment : Fragment() {
                 val items = result.data.items
                 adapter.submitList(items)
 
-                // A counter above the grid. The count is the whole result set,
-                // so it stays up while more pages arrive; the label only
-                // appears once there is something to describe.
-                binding.title.setVisible(hasQuery && items.isNotEmpty())
+                // A counter above the grid; it is what "no results" refers to.
+                binding.title.setVisible(browsing && items.isNotEmpty())
                 binding.title.text = getString(R.string.search_hit, items.size)
 
-                // Say it on screen rather than in a toast that vanishes: this is
-                // the state the screen sits in until the query changes.
                 binding.empty.text = getString(R.string.empty_result)
-                binding.empty.setVisible(hasQuery && items.isEmpty() && !result.data.hasMore)
+                binding.empty.setVisible(browsing && items.isEmpty() && !result.data.hasMore)
             }
         }
     }

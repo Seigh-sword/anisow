@@ -17,7 +17,11 @@ data class Featured(
     val runtime: String? = null,
     val age: String? = null,
     val rating: String? = null,
-    val score: Float? = null,
+    /**
+     * The API sends this as a quoted number ("8.2"); a Float here made Moshi
+     * throw and took the whole home feed with it.
+     */
+    val score: String? = null,
     val genres: String? = null,
     val share: String? = null,
 )

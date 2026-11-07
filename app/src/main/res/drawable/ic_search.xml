@@ -1,11 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Stroked, not filled. The previous version had a circle plus a handle as a
+  single path with a solid fill, which renders the magnifier as a filled dot:
+  a stroke-shaped path needs a stroke.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
-    android:viewportHeight="24"
-    android:tint="?attr/colorControlNormal">
+    android:viewportHeight="24">
     <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M10,4a6,6 0 1,0 0,12a6,6 0 1,0 0,-12M20.5,20.5l-5,-5" />
+        android:fillColor="#00000000"
+        android:pathData="M10.5,4a6.5,6.5 0 1,0 0,13a6.5,6.5 0 1,0 0,-13"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M15.5,15.5L20,20"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="2.4" />
 </vector>

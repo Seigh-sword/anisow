@@ -17,7 +17,8 @@ data class PostResponse(
     val premiered: String? = null,
     val rating: String? = null,
     val age: String? = null,
-    val score: Float? = null,
+    /** Quoted in the payload, like [Featured.score]. */
+    val score: String? = null,
     val genres: String? = null,
     val share: String? = null,
     val seasons: List<Season> = emptyList(),

@@ -26,7 +26,7 @@
 
     <ImageButton
         android:id="@+id/back_btn"
-        style="@style/Widget.AniLab.IconButton"
+        style="@style/Widget.TryAnime.IconButton"
         android:layout_width="44dp"
         android:layout_height="44dp"
         android:layout_margin="@dimen/screen_margin"
@@ -60,7 +60,7 @@
 
                 <TextView
                     android:id="@+id/title"
-                    style="@style/TextAppearance.AniLab.Title"
+                    style="@style/TextAppearance.TryAnime.Title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="180dp"
@@ -91,7 +91,7 @@
 
                         <TextView
                             android:id="@+id/score"
-                            style="@style/TextAppearance.AniLab.Body"
+                            style="@style/TextAppearance.TryAnime.Body"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="4dp"
@@ -109,7 +109,7 @@
 
                         <TextView
                             android:id="@+id/rating"
-                            style="@style/TextAppearance.AniLab.Body"
+                            style="@style/TextAppearance.TryAnime.Body"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textColor="@color/color_on_surface" />
@@ -126,7 +126,7 @@
 
                         <TextView
                             android:id="@+id/age"
-                            style="@style/TextAppearance.AniLab.Body"
+                            style="@style/TextAppearance.TryAnime.Body"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textColor="@color/color_on_surface" />
@@ -135,14 +135,14 @@
 
                 <TextView
                     android:id="@+id/genres"
-                    style="@style/TextAppearance.AniLab.Body"
+                    style="@style/TextAppearance.TryAnime.Body"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp" />
 
                 <TextView
                     android:id="@+id/overview"
-                    style="@style/TextAppearance.AniLab.Body"
+                    style="@style/TextAppearance.TryAnime.Body"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
@@ -156,7 +156,7 @@
 
                     <TextView
                         android:id="@+id/watch"
-                        style="@style/TextAppearance.AniLab.Title"
+                        style="@style/TextAppearance.TryAnime.Title"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
@@ -204,7 +204,7 @@
                     android:orientation="vertical">
 
                     <TextView
-                        style="@style/TextAppearance.AniLab.Label"
+                        style="@style/TextAppearance.TryAnime.Label"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/seasons" />
@@ -225,7 +225,7 @@
                     android:orientation="vertical">
 
                     <TextView
-                        style="@style/TextAppearance.AniLab.Label"
+                        style="@style/TextAppearance.TryAnime.Label"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/related" />
@@ -246,7 +246,7 @@
                     android:orientation="vertical">
 
                     <TextView
-                        style="@style/TextAppearance.AniLab.Label"
+                        style="@style/TextAppearance.TryAnime.Label"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/similar" />
@@ -269,7 +269,7 @@
                     android:padding="16dp">
 
                     <TextView
-                        style="@style/TextAppearance.AniLab.Label"
+                        style="@style/TextAppearance.TryAnime.Label"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="8dp"
@@ -277,25 +277,25 @@
 
                     <TextView
                         android:id="@+id/status"
-                        style="@style/TextAppearance.AniLab.Body"
+                        style="@style/TextAppearance.TryAnime.Body"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content" />
 
                     <TextView
                         android:id="@+id/premiered"
-                        style="@style/TextAppearance.AniLab.Body"
+                        style="@style/TextAppearance.TryAnime.Body"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content" />
 
                     <TextView
                         android:id="@+id/runtime"
-                        style="@style/TextAppearance.AniLab.Body"
+                        style="@style/TextAppearance.TryAnime.Body"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content" />
 
                     <TextView
                         android:id="@+id/type"
-                        style="@style/TextAppearance.AniLab.Body"
+                        style="@style/TextAppearance.TryAnime.Body"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content" />
                 </LinearLayout>
@@ -319,7 +319,7 @@
                         app:tint="@color/color_accent" />
 
                     <TextView
-                        style="@style/TextAppearance.AniLab.Body"
+                        style="@style/TextAppearance.TryAnime.Body"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"

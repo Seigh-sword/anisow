@@ -6,6 +6,22 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Downloading a player APK and handing it to the package installer. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+    <!--
+      Android 11+ hides other apps unless they are declared: without this the
+      component intent to the player throws NameNotFoundException and "Watch"
+      reports that the player is missing even when it is installed.
+    -->
+    <queries>
+        <package android:name="com.kyotoplayer" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="application/vnd.android.package-archive" />
+        </intent>
+    </queries>
+
     <application
         android:name=".AniLabApp"
         android:allowBackup="true"
@@ -16,14 +32,14 @@
         android:networkSecurityConfig="@xml/network_security_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AniLab"
+        android:theme="@style/Theme.TryAnime"
         tools:targetApi="34">
 
         <activity
             android:name=".ui.home.HomeActivity"
             android:exported="true"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.AniLab.Splash"
+            android:theme="@style/Theme.TryAnime.Splash"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -53,6 +69,16 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_stat_notification" />
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@color/color_accent" />

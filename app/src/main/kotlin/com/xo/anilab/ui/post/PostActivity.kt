@@ -2,7 +2,10 @@ package com.xo.anilab.ui.post
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
@@ -22,6 +25,7 @@ import com.xo.anilab.data.remote.responses.PostResponse
 import com.xo.anilab.databinding.ActivityPostBinding
 import com.xo.anilab.databinding.BottomSheetPlayerBinding
 import com.xo.anilab.di.ServiceLocator
+import com.xo.anilab.player.PlayerInstaller
 import com.xo.anilab.player.PlayerLauncher
 import com.xo.anilab.ui.common.PostAdapter
 import com.xo.anilab.ui.common.SeasonAdapter
@@ -116,8 +120,8 @@ class PostActivity : AppCompatActivity() {
         binding.overview.text = post.overview.orEmpty()
         binding.genres.text = post.genres.orEmpty()
 
-        binding.score.text = post.score?.toString().orEmpty()
-        binding.scoreBlock.setVisible(post.score != null)
+        binding.score.text = post.score.orEmpty()
+        binding.scoreBlock.setVisible(!post.score.isNullOrBlank())
 
         binding.rating.text = post.rating.orEmpty()
         binding.ratingBlock.setVisible(!post.rating.isNullOrBlank())
@@ -180,26 +184,93 @@ class PostActivity : AppCompatActivity() {
     }
 
     /**
-     * The player is a separate app; the sheet names it and links to its store
-     * page rather than leaving the watch button dead.
+     * Playback is handed to a separate player app, and the payload's download
+     * link is usually a Play Store page. This sheet is the path when that app is
+     * not installed: it names the player, can fetch its APK with real progress,
+     * and keeps the store link as the fallback.
+     *
+     * Without this the tap opened a `market://` URL that an emulator cannot
+     * resolve, so nothing happened at all.
      */
     private fun showPlayerSheet(config: PlayerConfig) {
+        val installer = PlayerInstaller(this)
         val sheet = BottomSheetDialog(this)
         val sheetBinding = BottomSheetPlayerBinding.inflate(layoutInflater)
         sheet.setContentView(sheetBinding.root)
 
         sheetBinding.title.text = config.playerName
-        sheetBinding.message.text = config.playerDesc.ifBlank {
-            getString(R.string.player_missing_message)
-        }
+        // The payload embeds a literal "\n" in the description; as-is it renders
+        // as a stray backslash-n in the middle of a sentence.
+        sheetBinding.status.text = config.playerDesc
+            .replace("\\n", "\n")
+            .ifBlank { getString(R.string.player_missing_message) }
         sheetBinding.closeIcon.setOnClickListener { sheet.dismiss() }
+
+        val canDownload = installer.apkUrl(config) != null
+        sheetBinding.actionBtn.setVisible(canDownload)
+        sheetBinding.secondaryBtn.setVisible(!canDownload)
+
         sheetBinding.actionBtn.setOnClickListener {
+            sheetBinding.actionBtn.setVisible(false)
+            sheetBinding.progress.setVisible(true)
+
+            lifecycleScope.launch {
+                val result = installer.download(config) { percent ->
+                    sheetBinding.progress.isIndeterminate = false
+                    sheetBinding.progress.setProgressCompat(percent, true)
+                    sheetBinding.status.text = getString(R.string.player_downloading, percent)
+                }
+
+                sheetBinding.progress.setVisible(false)
+                when (result) {
+                    is PlayerInstaller.Progress.Ready -> {
+                        sheetBinding.status.setText(R.string.player_download_done)
+                        openInstaller(installer, result.apk, sheet)
+                    }
+
+                    else -> {
+                        sheetBinding.status.setText(R.string.player_download_failed)
+                        sheetBinding.actionBtn.setVisible(false)
+                        sheetBinding.secondaryBtn.setVisible(true)
+                    }
+                }
+            }
+        }
+
+        sheetBinding.secondaryBtn.setOnClickListener {
             sheet.dismiss()
-            runCatching { startActivity(ServiceLocator.player().installPlayer(config)) }
-                .onFailure { toast(R.string.player_missing_title) }
+            runCatching { startActivity(installer.storeIntent(config)) }
+                .onFailure { toast(R.string.player_no_link) }
         }
 
         sheet.show()
+    }
+
+    /**
+     * The installer needs permission to install unknown apps. Sending the user to
+     * that one settings page is the difference between "nothing happened" and an
+     * actual install.
+     */
+    private fun openInstaller(installer: PlayerInstaller, apk: java.io.File, sheet: BottomSheetDialog) {
+        val needsPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            !packageManager.canRequestPackageInstalls()
+
+        if (needsPermission) {
+            toast(R.string.player_download_done)
+            runCatching {
+                startActivity(
+                    Intent(
+                        Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                        Uri.parse("package:$packageName"),
+                    )
+                )
+            }
+            return
+        }
+
+        runCatching { startActivity(installer.install(apk)) }
+            .onFailure { toast(R.string.player_download_failed) }
+        sheet.dismiss()
     }
 
     private fun share() {

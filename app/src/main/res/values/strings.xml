@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AniLab</string>
+    <string name="app_name">TryAnime</string>
 
     <!-- Bottom navigation -->
     <string name="home">Home</string>
@@ -22,19 +22,32 @@
     <string name="empty_watchlist">Your watchlist is empty. Tap the bookmark on a title to save it.</string>
     <string name="search_hit">%1$d results</string>
 
+    <!-- Search filters -->
+    <string name="filter_all">All</string>
+    <string name="filter_movies">Movies</string>
+    <string name="filter_series">Series</string>
+    <string name="filter_count">Showing %1$d of %2$d</string>
+    <string name="filter_none">No match in these results. Try All.</string>
+
     <!-- Watch list -->
     <string name="added_to_my_list">Added to your list</string>
     <string name="removed_from_my_list">Removed from your list</string>
 
     <!-- Player -->
     <string name="player_missing_title">Player not installed</string>
-    <string name="player_missing_message">This title plays in an external player. Install it, then open the episode again.</string>
+    <string name="player_missing_message">This title streams in a separate player app. Install it, then open the episode again.</string>
     <string name="player_install">Install player</string>
+    <string name="player_download">Download player</string>
+    <string name="player_open_store">Open in Play Store instead</string>
+    <string name="player_downloading">Downloading… %1$d%%</string>
+    <string name="player_download_done">Downloaded. Open the file to install it.</string>
+    <string name="player_download_failed">Download failed. Use the Play Store link instead.</string>
+    <string name="player_no_link">This player has no download link</string>
     <string name="demo_unavailable">This is a preview entry, there is no episode yet</string>
 
     <!-- Push -->
     <string name="fcm_default_notification_channel_id" translatable="false">anilab_default</string>
-    <string name="fcm_default_notification_channel_title">AniLab</string>
+    <string name="fcm_default_notification_channel_title">TryAnime</string>
     <string name="one_signal_app_id" translatable="false">""</string>
 
     <!-- Accessibility -->

@@ -59,7 +59,7 @@
          scroll underneath and the translucency has something to show. -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"
-        style="@style/Widget.AniLab.BottomNav"
+        style="@style/Widget.TryAnime.BottomNav"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="12dp"

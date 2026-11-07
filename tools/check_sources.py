@@ -89,6 +89,13 @@ def collect_resources() -> dict[str, set[str]]:
     for path in list(RES.glob("drawable/*")) + list(RES.glob("mipmap-anydpi-v26/*")):
         names["drawable"].add(path.stem)
 
+    # <style> is a values child, but also a real R.style entry that layouts and
+    # Kotlin refer to by dotted name.
+    for path in RES.glob("values/*.xml"):
+        for node in ET.parse(path).getroot():
+            if node.tag == "style" and node.get("name"):
+                names["style"].add(node.get("name").replace(".", "_"))
+
     names["menu"] = {path.stem for path in RES.glob("menu/*.xml")}
     names["layout"] = {path.stem for path in RES.glob("layout/*.xml")}
 
@@ -144,6 +151,8 @@ def check_xml_refs(ids: set[str], res: dict[str, set[str]]) -> None:
                 continue
             if kind == "id":
                 ok = name in ids
+            elif kind == "style":
+                ok = name.replace(".", "_") in res.get("style", set())
             elif kind == "layout":
                 ok = name in declared_layouts
             else:

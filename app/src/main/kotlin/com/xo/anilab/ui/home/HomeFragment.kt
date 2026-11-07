@@ -99,8 +99,8 @@ class HomeFragment : Fragment() {
         binding.featuredPremiered.text = item.premiered.orEmpty()
         binding.featuredRuntime.text = item.runtime.orEmpty()
 
-        binding.featuredScore.text = item.score?.toString().orEmpty()
-        binding.featuredScoreblock.setVisible(item.score != null)
+        binding.featuredScore.text = item.score.orEmpty()
+        binding.featuredScoreblock.setVisible(!item.score.isNullOrBlank())
 
         binding.featuredRating.text = item.rating.orEmpty()
         binding.featuredRatingBlock.setVisible(!item.rating.isNullOrBlank())
@@ -109,7 +109,7 @@ class HomeFragment : Fragment() {
         binding.featuredAgeBlock.setVisible(!item.age.isNullOrBlank())
 
         binding.badges.setVisible(
-            item.score != null || !item.rating.isNullOrBlank() || !item.age.isNullOrBlank()
+            !item.score.isNullOrBlank() || !item.rating.isNullOrBlank() || !item.age.isNullOrBlank()
         )
 
         // The two descriptive lines are empty for unreleased titles.

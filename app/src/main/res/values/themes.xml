@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="Theme.AniLab" parent="Theme.Material3.Dark.NoActionBar">
+    <style name="Theme.TryAnime" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/color_primary</item>
         <item name="colorOnPrimary">@color/color_on_brand</item>
         <item name="colorPrimaryContainer">@color/brand_start</item>
@@ -23,14 +23,14 @@
         <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="27">shortEdges</item>
     </style>
 
-    <style name="Theme.AniLab.Splash" parent="Theme.SplashScreen">
+    <style name="Theme.TryAnime.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/color_surface</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
-        <item name="postSplashScreenTheme">@style/Theme.AniLab</item>
+        <item name="postSplashScreenTheme">@style/Theme.TryAnime</item>
     </style>
 
     <!-- Glass chrome -->
-    <style name="Widget.AniLab.BottomNav" parent="Widget.Material3.BottomNavigationView">
+    <style name="Widget.TryAnime.BottomNav" parent="Widget.Material3.BottomNavigationView">
         <item name="android:background">@drawable/bg_glass_bar</item>
         <item name="itemIconTint">@color/nav_item</item>
         <item name="itemTextColor">@color/nav_item</item>
@@ -39,22 +39,36 @@
         <item name="elevation">0dp</item>
     </style>
 
-    <style name="Widget.AniLab.IconButton" parent="Widget.Material3.Button.IconButton">
+    <style name="Widget.TryAnime.IconButton" parent="Widget.Material3.Button.IconButton">
         <item name="android:background">@drawable/bg_glass_circle</item>
         <item name="android:padding">8dp</item>
     </style>
 
+    <!-- Filter chip: a plain TextView, so a selected chip is just a different
+         background and text colour. Material's Chip brings its own palette and a
+         close icon this row does not use. -->
+    <style name="Widget.TryAnime.Chip" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginEnd">8dp</item>
+        <item name="android:background">@drawable/bg_filter_chip</item>
+        <item name="android:paddingHorizontal">14dp</item>
+        <item name="android:paddingVertical">8dp</item>
+        <item name="android:textColor">@color/filter_chip_text</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+
     <!-- Type -->
-    <style name="TextAppearance.AniLab.Title" parent="TextAppearance.Material3.TitleLarge">
+    <style name="TextAppearance.TryAnime.Title" parent="TextAppearance.Material3.TitleLarge">
         <item name="android:textColor">@color/color_on_surface</item>
         <item name="android:textStyle">bold</item>
     </style>
 
-    <style name="TextAppearance.AniLab.Body" parent="TextAppearance.Material3.BodyMedium">
+    <style name="TextAppearance.TryAnime.Body" parent="TextAppearance.Material3.BodyMedium">
         <item name="android:textColor">@color/color_on_surface_muted</item>
     </style>
 
-    <style name="TextAppearance.AniLab.Label" parent="TextAppearance.Material3.LabelMedium">
+    <style name="TextAppearance.TryAnime.Label" parent="TextAppearance.Material3.LabelMedium">
         <item name="android:textColor">@color/color_on_surface</item>
         <item name="android:textStyle">bold</item>
         <item name="android:letterSpacing">0.06</item>

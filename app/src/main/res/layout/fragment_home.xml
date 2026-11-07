@@ -57,7 +57,7 @@
 
                     <TextView
                         android:id="@+id/featuredKicker"
-                        style="@style/TextAppearance.AniLab.Label"
+                        style="@style/TextAppearance.TryAnime.Label"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginHorizontal="@dimen/screen_margin"
@@ -69,7 +69,7 @@
 
                     <TextView
                         android:id="@+id/featuredTitle"
-                        style="@style/TextAppearance.AniLab.Title"
+                        style="@style/TextAppearance.TryAnime.Title"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginHorizontal="@dimen/screen_margin"
@@ -81,7 +81,7 @@
 
                     <TextView
                         android:id="@+id/featuredType"
-                        style="@style/TextAppearance.AniLab.Body"
+                        style="@style/TextAppearance.TryAnime.Body"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginHorizontal="@dimen/screen_margin"
@@ -92,7 +92,7 @@
 
                     <TextView
                         android:id="@+id/featuredGenres"
-                        style="@style/TextAppearance.AniLab.Body"
+                        style="@style/TextAppearance.TryAnime.Body"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginHorizontal="@dimen/screen_margin"
@@ -132,7 +132,7 @@
 
                             <TextView
                                 android:id="@+id/featuredScore"
-                                style="@style/TextAppearance.AniLab.Body"
+                                style="@style/TextAppearance.TryAnime.Body"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="4dp"
@@ -150,7 +150,7 @@
 
                             <TextView
                                 android:id="@+id/featuredRating"
-                                style="@style/TextAppearance.AniLab.Body"
+                                style="@style/TextAppearance.TryAnime.Body"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:textColor="@color/color_on_surface" />
@@ -167,7 +167,7 @@
 
                             <TextView
                                 android:id="@+id/featuredAge"
-                                style="@style/TextAppearance.AniLab.Body"
+                                style="@style/TextAppearance.TryAnime.Body"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:textColor="@color/color_on_surface" />
@@ -186,7 +186,7 @@
 
                         <TextView
                             android:id="@+id/featuredWatch"
-                            style="@style/TextAppearance.AniLab.Title"
+                            style="@style/TextAppearance.TryAnime.Title"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -239,19 +239,19 @@
 
                     <TextView
                         android:id="@+id/featuredStatus"
-                        style="@style/TextAppearance.AniLab.Body"
+                        style="@style/TextAppearance.TryAnime.Body"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content" />
 
                     <TextView
                         android:id="@+id/featuredPremiered"
-                        style="@style/TextAppearance.AniLab.Body"
+                        style="@style/TextAppearance.TryAnime.Body"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content" />
 
                     <TextView
                         android:id="@+id/featuredRuntime"
-                        style="@style/TextAppearance.AniLab.Body"
+                        style="@style/TextAppearance.TryAnime.Body"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content" />
 
@@ -274,7 +274,7 @@
                             app:tint="@color/color_accent" />
 
                         <TextView
-                            style="@style/TextAppearance.AniLab.Body"
+                            style="@style/TextAppearance.TryAnime.Body"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="6dp"

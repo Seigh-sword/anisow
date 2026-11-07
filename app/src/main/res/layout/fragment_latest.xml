@@ -8,7 +8,7 @@
 
     <TextView
         android:id="@+id/title"
-        style="@style/TextAppearance.AniLab.Title"
+        style="@style/TextAppearance.TryAnime.Title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/screen_margin"

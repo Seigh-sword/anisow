@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The only thing exposed is the downloaded player APK; nothing else in the
+     app's storage is reachable through the provider. -->
+<paths>
+    <external-files-path
+        name="players"
+        path="players/" />
+    <files-path
+        name="players_internal"
+        path="players/" />
+</paths>
