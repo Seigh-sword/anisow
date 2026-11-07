@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { AnimeCard } from "@anispots/core";
@@ -10,7 +10,7 @@ import { loadBrowse, loadGenres } from "../lib/data";
 import { Poster } from "../components/Poster";
 import { Typed } from "../ui/Text";
 import { Glass, PressableScale } from "../ui/Glass";
-import type { RootStack } from "../navigation/types";
+import type { RootStack, TabParamList } from "../navigation/types";
 
 /**
  * Browse.
@@ -21,6 +21,7 @@ import type { RootStack } from "../navigation/types";
  */
 export function BrowseScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStack>>();
+  const route = useRoute<RouteProp<TabParamList, "Browse">>();
   const [genres, setGenres] = useState<{ name: string; slug: string }[]>([]);
   const [active, setActive] = useState<string | null>(null);
   const [items, setItems] = useState<AnimeCard[]>([]);
@@ -45,6 +46,14 @@ export function BrowseScreen() {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    const requested = route.params?.genre;
+    if (requested && requested !== active) {
+      setActive(requested);
+      void load(requested);
+    }
+  }, [route.params?.genre, active, load]);
 
   return (
     <View style={styles.root}>

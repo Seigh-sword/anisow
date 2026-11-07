@@ -168,12 +168,19 @@ try {
   await page.getByRole("button", { name: /^Download$/i }).first().click();
   await page.waitForSelector('[role="dialog"][aria-label="Download episodes"]', { timeout: 10_000 });
   const selectAll = page.getByRole("button", { name: /Select all/i });
+  await selectAll.waitFor({ timeout: 10_000 });
   const exportButton = page.getByRole("button", { name: /Export/i });
   const cancelButton = page.getByRole("button", { name: /^Cancel$/i });
   check("the download sheet has Select all", (await selectAll.count()) > 0);
   check("Export sits next to Cancel", (await exportButton.count()) > 0 && (await cancelButton.count()) > 0);
 
-  // The sample sheet resolves links immediately; give the state a beat to land.
+  // Wait until at least one episode's download links have resolved so Select all has items to select.
+  await page.waitForFunction(
+    () => !/0 of \d+ episodes have a file/.test(document.body.innerText),
+    undefined,
+    { timeout: 8000 },
+  ).catch(() => {});
+
   await selectAll.click();
   await page.waitForFunction(
     () => /Export \(\d+\)/.test(document.body.innerText),

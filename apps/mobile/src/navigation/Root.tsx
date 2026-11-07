@@ -13,6 +13,7 @@ import { LibraryScreen } from "../screens/LibraryScreen";
 import { DetailScreen } from "../screens/DetailScreen";
 import { WatchScreen } from "../screens/WatchScreen";
 import { EpisodesScreen } from "../screens/EpisodesScreen";
+import { SettingsScreen } from "../screens/SettingsScreen";
 import { Typed } from "../ui/Text";
 import type { RootStack, TabParamList } from "./types";
 
@@ -137,6 +138,7 @@ export function Root() {
         <Stack.Screen name="Tabs" component={TabNavigator} />
         <Stack.Screen name="Detail" component={DetailScreen} />
         <Stack.Screen name="Episodes" component={EpisodesScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen
           name="Watch"
           component={WatchScreen}

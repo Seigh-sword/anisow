@@ -8,7 +8,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { AnimeDetails, Episode } from "@anispots/core";
 import { brand, palette, space } from "@anispots/design";
 import { loadDetails, loadEpisodes } from "../lib/data";
-import { getProgress, toggleWatchlist } from "../lib/storage";
+import { getProgress, getWatchlist, toggleWatchlist } from "../lib/storage";
 import { Typed } from "../ui/Text";
 import { Glass, GradientSurface, PressableScale } from "../ui/Glass";
 import type { RootStack } from "../navigation/types";
@@ -43,10 +43,12 @@ export function DetailScreen() {
         setDetails(info);
         setEpisodes(list);
 
-        const progress = await getProgress(id);
+        const [progress, watchlist] = await Promise.all([getProgress(id), getWatchlist()]);
+        if (cancelled) return;
         const position = progress ? list.find((episode) => episode.id === progress.episodeId) : undefined;
         setResume(position);
         setSaved(Boolean(progress));
+        setInList(watchlist.some((entry) => entry.id === id));
       } catch (cause) {
         if (!cancelled) setError(cause instanceof Error ? cause.message : String(cause));
       }
@@ -165,6 +167,7 @@ export function DetailScreen() {
                   onPress={() =>
                     navigation.navigate("Tabs", {
                       screen: "Browse",
+                      params: { genre: genre.toLowerCase().replace(/\s+/g, "-") },
                     } as never)
                   }
                 >

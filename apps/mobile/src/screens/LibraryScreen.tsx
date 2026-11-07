@@ -103,10 +103,23 @@ export function LibraryScreen() {
     <View style={styles.root}>
       <SafeAreaView edges={["top"]}>
         <View style={styles.header}>
-          <Typed role="title">Library</Typed>
-          <Typed role="micro" color={palette.textFaint}>
-            {entries.filter((entry) => entry.state === "done").length} files · {humanBytes(total)}
-          </Typed>
+          <View>
+            <Typed role="title">Library</Typed>
+            <Typed role="micro" color={palette.textFaint}>
+              {entries.filter((entry) => entry.state === "done").length} files · {humanBytes(total)}
+            </Typed>
+          </View>
+
+          <PressableScale
+            onPress={() => navigation.navigate("Settings")}
+            accessibilityLabel="Settings"
+          >
+            <Glass level="subtle" radius={999} contentStyle={styles.smallButton}>
+              <Typed role="micro" color={palette.textMuted}>
+                Settings
+              </Typed>
+            </Glass>
+          </PressableScale>
         </View>
 
         <View style={styles.tabs}>

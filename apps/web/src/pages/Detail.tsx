@@ -7,9 +7,10 @@ import { loadDetails, loadEpisodes } from "../lib/data";
 import { getProgress, isInWatchlist, toggleWatchlist } from "../lib/library";
 import { Glass } from "../components/Glass";
 import { Poster } from "../components/Poster";
-import { BrandButton, GlassButton, PlayIcon } from "../components/Button";
+import { BrandButton, DownloadIcon, GlassButton, PlayIcon } from "../components/Button";
 import { ErrorState, PageSkeleton } from "../components/States";
 import { EpisodeSheet } from "../components/EpisodeSheet";
+import { DownloadSheet } from "../components/DownloadSheet";
 
 /**
  * The detail screen.
@@ -23,6 +24,7 @@ export function Detail() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const [showEpisodes, setShowEpisodes] = useState(false);
+  const [showDownloads, setShowDownloads] = useState(false);
   const [inList, setInList] = useState(() => isInWatchlist(id));
 
   const details = useAsync(`details:${id}`, () => loadDetails(id));
@@ -135,6 +137,13 @@ export function Detail() {
               >
                 {inList ? "In watchlist" : "Watchlist"}
               </GlassButton>
+
+              {list.length > 0 && (
+                <GlassButton onClick={() => setShowDownloads(true)}>
+                  <DownloadIcon />
+                  Download
+                </GlassButton>
+              )}
             </div>
           </div>
         </div>
@@ -285,6 +294,18 @@ export function Detail() {
           setShowEpisodes(false);
           watch(episode);
         }}
+      />
+
+      <DownloadSheet
+        open={showDownloads}
+        onClose={() => setShowDownloads(false)}
+        target={{
+          animeId: anime.id,
+          animeTitle: anime.title,
+          coverUrl: anime.poster,
+          description: anime.description,
+        }}
+        episodes={list}
       />
     </div>
   );

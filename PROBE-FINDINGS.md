@@ -29,6 +29,8 @@ rather than hardcoding it; it is the site's own statement of where its API lives
 
 | Route | Returns |
 | --- | --- |
+| `GET /home` | Home spotlight, rails, and `hianime-genres-widget` links |
+| `GET /genres/{slug}` | Genre listing (plural `/genres/`, **not** `/genre/` which is a 404) |
 | `GET /api/theme/episode/servers?episodeId={epId}` | `{status, html}` — HTML of the server buttons |
 | `GET /api/theme/episode/list/{animeId}` | `{status, totalItems, html}` — HTML of every episode |
 | `GET /api/theme/episode/downloads?episodeId={epId}` | `{status, html}` — HTML of download groups |

@@ -114,14 +114,12 @@ export const loadServers = async (episodeId: string) =>
  * answer rather than a failure — the sheet explains it instead of looking broken.
  */
 export async function loadDownloadLinks(episodeId: string) {
-  const result = await attempt(
-    () => api.downloads(episodeId),
-    () => ({ ok: true as const, data: demoDownloadLinks() }),
-  );
-
-  return result.ok
-    ? { links: result.data, error: null as string | null }
-    : { links: [], error: result.error };
+  try {
+    const data = await attempt(() => api.downloads(episodeId).then(unwrap), demoDownloadLinks);
+    return { links: data, error: null as string | null };
+  } catch (cause) {
+    return { links: [], error: cause instanceof Error ? cause.message : String(cause) };
+  }
 }
 
 /* ----------------------------------------------------------------- search */

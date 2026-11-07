@@ -12,11 +12,12 @@ export type RootStack = {
   Watch: { id: string; episodeId?: string; offline?: boolean };
   Episodes: { id: string; title: string };
   Downloads: undefined;
+  Settings: undefined;
 };
 
 export type TabParamList = {
   Home: undefined;
-  Browse: undefined;
+  Browse: { genre?: string } | undefined;
   Search: undefined;
   Library: undefined;
 };
