@@ -281,10 +281,33 @@ async function probeClientScripts(watch) {
     }
   }
 
+  // The template around an endpoint string is what shows the URL shape;
+  // the bare name alone is not enough to call it.
+  const contexts = [];
+  for (const src of srcs.slice(0, 6)) {
+    const r = await client.get(join(src)).catch(() => null);
+    if (!r || r.status !== 200) continue;
+    const js = String(r.data);
+    for (const needle of ["episode/list", "server-name", "servers", "sources", "watch-progress"]) {
+      let idx = js.indexOf(needle);
+      let guard = 0;
+      while (idx !== -1 && guard < 2) {
+        contexts.push({
+          file: src.split("/").pop(),
+          needle,
+          code: js.slice(Math.max(0, idx - 160), idx + 160).replace(/\s+/g, " "),
+        });
+        idx = js.indexOf(needle, idx + needle.length);
+        guard += 1;
+      }
+    }
+  }
+
   const detail = {
     scanned,
     apiPaths: [...apiPaths].slice(0, 40),
     actions: [...actions].slice(0, 40),
+    contexts: contexts.slice(0, 10),
   };
   step("scan client scripts", true, detail);
   return detail;
