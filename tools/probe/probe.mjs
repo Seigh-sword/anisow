@@ -287,6 +287,15 @@ async function probeClientScripts(watch) {
   const contexts = [];
   const NEEDLES = ["episode/list", "server-name", "episode/servers", "episode/sources", "sources"];
 
+  const take = (re, limit = 6) => {
+    const out = new Set();
+    for (const m of String(html).matchAll(re)) {
+      out.add(m[0]);
+      if (out.size >= limit) break;
+    }
+    return [...out];
+  };
+
   for (const src of srcs) {
     const r = await client.get(join(src)).catch(() => null);
     if (!r || r.status !== 200) continue;
