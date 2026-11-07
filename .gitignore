@@ -1,17 +1,36 @@
-*.iml
-.gradle/
-local.properties
-.idea/
-.DS_Store
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build output
+dist/
 build/
-captures/
-.externalNativeBuild
-.cxx
+out/
+*.tsbuildinfo
+.expo/
+.expo-shared/
+web-build/
+
+# Native
 *.apk
 *.aab
-output.json
+*.ipa
+android/
+ios/
 
-# Secrets: the Firebase config is generated per environment.
-app/google-services.json
-tools/probe/node_modules/
+# Env and secrets
+.env
+.env.local
+.env.*.local
+google-services.json
+GoogleService-Info.plist
+
+# Logs and OS noise
+npm-debug.log*
+yarn-error.log*
+.DS_Store
+*.log
+
+# Probe output
 tools/probe/probe-result.json
