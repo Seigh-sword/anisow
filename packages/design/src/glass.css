@@ -1,0 +1,296 @@
+/**
+ * AniSpots glass — the web half.
+ *
+ * Real glass takes four layers, and skipping any one is what makes "glassmorphism"
+ * look like a grey rectangle with a border:
+ *
+ *   1. `backdrop-filter` blurs what is *behind* the panel and saturates it back,
+ *      because a blur alone drains the colour out of artwork;
+ *   2. a translucent fill, so the blurred backdrop is visible through it;
+ *   3. a hairline border, brighter along the top edge, which is what reads as a
+ *      lit edge on a physical sheet;
+ *   4. a soft shadow, so the sheet sits above the background instead of in it.
+ *
+ * Firefox before 103 and Chrome before 76 do not support `backdrop-filter`. The
+ * `@supports` fallback raises the fill opacity so text stays readable rather than
+ * turning into text on a moving poster.
+ */
+
+:root {
+  --brand-start: #007bff;
+  --brand-mid: #7b3dff;
+  --brand-end: #ff00ff;
+
+  --ink: #07080e;
+  --ink-soft: #0b0d16;
+  --ink-raised: #11141f;
+
+  --text: #f7f9ff;
+  --text-muted: #a7b0c6;
+  --text-faint: #6e7789;
+
+  --danger: #ff4d6d;
+  --success: #41d99b;
+  --warning: #ffc24d;
+
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+
+  --s-xxs: 2px;
+  --s-xs: 4px;
+  --s-sm: 8px;
+  --s-md: 12px;
+  --s-lg: 16px;
+  --s-xl: 24px;
+  --s-xxl: 32px;
+  --s-xxxl: 48px;
+
+  --brand-gradient: linear-gradient(135deg, var(--brand-start) 0%, var(--brand-mid) 52%, var(--brand-end) 100%);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* ---------------------------------------------------------------- surfaces */
+
+.glass {
+  position: relative;
+  background: var(--glass-fill, rgba(255, 255, 255, 0.07));
+  border: 1px solid var(--glass-stroke, rgba(255, 255, 255, 0.14));
+  border-radius: var(--r-lg);
+  box-shadow:
+    0 1px 0 0 var(--glass-stroke-bright, rgba(255, 255, 255, 0.3)) inset,
+    0 18px 40px -20px var(--glass-shadow, rgba(0, 0, 0, 0.45));
+  backdrop-filter: blur(var(--glass-blur, 20px)) saturate(var(--glass-saturation, 1.35));
+  -webkit-backdrop-filter: blur(var(--glass-blur, 20px)) saturate(var(--glass-saturation, 1.35));
+}
+
+.glass--subtle {
+  --glass-fill: rgba(255, 255, 255, 0.045);
+  --glass-stroke: rgba(255, 255, 255, 0.1);
+  --glass-stroke-bright: rgba(255, 255, 255, 0.22);
+  --glass-blur: 12px;
+  --glass-saturation: 1.2;
+}
+
+.glass--strong {
+  --glass-fill: rgba(10, 12, 20, 0.55);
+  --glass-stroke: rgba(255, 255, 255, 0.16);
+  --glass-stroke-bright: rgba(255, 255, 255, 0.34);
+  --glass-blur: 28px;
+  --glass-saturation: 1.5;
+  --glass-shadow: rgba(0, 0, 0, 0.55);
+}
+
+.glass--floating {
+  --glass-fill: rgba(12, 14, 22, 0.78);
+  --glass-stroke: rgba(255, 255, 255, 0.18);
+  --glass-stroke-bright: rgba(255, 255, 255, 0.38);
+  --glass-blur: 36px;
+  --glass-saturation: 1.6;
+  --glass-shadow: rgba(0, 0, 0, 0.65);
+}
+
+/* No backdrop filter: lean on opacity so contrast survives. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .glass--subtle {
+    --glass-fill: rgba(16, 19, 29, 0.9);
+  }
+  .glass--strong {
+    --glass-fill: rgba(10, 12, 20, 0.94);
+  }
+  .glass--floating {
+    --glass-fill: rgba(12, 14, 22, 0.97);
+  }
+}
+
+/**
+ * A gradient hairline on a glass edge.
+ *
+ * A border cannot hold a gradient, so this is a mask-composited pseudo-element:
+ * the gradient is painted, then the middle is punched out. That leaves a 1px
+ * frame of brand colour, which is the accent that makes the panel feel branded
+ * rather than generic.
+ */
+.glass--lit {
+  border-color: transparent;
+}
+
+.glass--lit::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    140deg,
+    rgba(0, 123, 255, 0.9),
+    rgba(123, 61, 255, 0.35) 40%,
+    rgba(255, 0, 255, 0.85) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------- gradient */
+
+.brand-gradient {
+  background-image: var(--brand-gradient);
+}
+
+/** Gradient text: a flat colour cannot do it, a background cannot clip to glyphs. */
+.brand-text {
+  background-image: var(--brand-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ------------------------------------------------------------------ motion */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Ambient breathing behind the hero: slow, subtle, never distracting. */
+  @keyframes anispots-glow {
+    0%,
+    100% {
+      opacity: 0.55;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      opacity: 0.85;
+      transform: translate3d(0, -8px, 0) scale(1.04);
+    }
+  }
+
+  .ambient-glow {
+    animation: anispots-glow 7s var(--ease-in-out) infinite;
+    will-change: opacity, transform;
+  }
+
+  @keyframes anispots-shimmer {
+    from {
+      background-position: -200% 0;
+    }
+    to {
+      background-position: 200% 0;
+    }
+  }
+
+  .shimmer {
+    background: linear-gradient(
+      100deg,
+      rgba(255, 255, 255, 0.03) 20%,
+      rgba(255, 255, 255, 0.09) 40%,
+      rgba(255, 255, 255, 0.03) 60%
+    );
+    background-size: 200% 100%;
+    animation: anispots-shimmer 1.6s linear infinite;
+  }
+
+  @keyframes anispots-rise {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 14px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  .rise {
+    animation: anispots-rise 0.42s var(--ease-out) both;
+  }
+}
+
+/* Motion is a preference, not a default: honour it and keep the layout intact. */
+@media (prefers-reduced-motion: reduce) {
+  .ambient-glow,
+  .shimmer,
+  .rise {
+    animation: none !important;
+  }
+}
+
+/* --------------------------------------------------------------- utilities */
+
+.pressable {
+  transition:
+    transform 0.18s var(--ease-out),
+    box-shadow 0.18s var(--ease-out),
+    background-color 0.18s var(--ease-out);
+  will-change: transform;
+}
+
+.pressable:active {
+  transform: scale(0.965);
+}
+
+.pressable:hover {
+  box-shadow: 0 22px 46px -22px rgba(0, 0, 0, 0.7);
+}
+
+/** Scroll rails that keep their end spacing without clipping the first card. */
+.rail {
+  display: flex;
+  gap: var(--s-md);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  padding-inline: var(--s-xl);
+  scroll-padding-inline: var(--s-xl);
+}
+
+.rail::-webkit-scrollbar {
+  display: none;
+}
+
+.rail > * {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+}
+
+/** The poster itself: 2:3, rounded, with the artwork's own colour bleeding out. */
+.poster {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--ink-raised);
+  isolation: isolate;
+}
+
+.poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s var(--ease-out);
+}
+
+.pressable:hover .poster img {
+  transform: scale(1.06);
+}
+
+/** Bottom fade so a title sits on artwork legibly. */
+.poster::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 52%;
+  background: linear-gradient(to top, rgba(4, 5, 10, 0.92), transparent);
+  pointer-events: none;
+}

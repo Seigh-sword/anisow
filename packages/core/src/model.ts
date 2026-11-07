@@ -109,6 +109,15 @@ export interface WatchProgress {
   /** Seconds; 0 when the player never reported it. */
   duration: number;
   updatedAt: number;
+  /**
+   * Carried so the "Continue watching" shelf can render from storage alone.
+   * Without these the shelf has to re-fetch every anime's detail page just to
+   * draw a poster, which is exactly what the user does not want on a cold start.
+   */
+  animeTitle?: string;
+  coverUrl?: string;
+  /** `position / duration`, clamped; `undefined` when the length is unknown. */
+  fraction?: number;
 }
 
 /**
