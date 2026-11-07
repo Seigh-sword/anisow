@@ -1,0 +1,70 @@
+name: Probe stream chain
+
+# Diagnostic only: can a normal network reach aniwatchtv.ws and resolve an
+# episode to a playable .m3u8? The development sandbox cannot answer this (no
+# direct outbound network), so it is asked here, where the internet works.
+#
+# Manual trigger, and it never blocks a build: the answer is the artifact.
+
+on:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: "Site base URL"
+        required: false
+        default: "https://aniwatchtv.ws"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: Resolve an episode
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: tools/probe
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install probe deps
+        run: npm install --no-audit --no-fund
+
+      - name: Run probe
+        env:
+          ANIWATCH_BASE: ${{ inputs.base }}
+        run: node probe.mjs
+
+      # Always: a failed probe is the useful result.
+      - name: Summarise
+        if: always()
+        run: |
+          if [ -f probe-result.json ]; then
+            {
+              echo "## Probe result"
+              echo '```json'
+              cat probe-result.json
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload result
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: probe-result
+          path: tools/probe/probe-result.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      # Nothing streamable means the run should be red: that is the answer.
+      - name: Fail when unresolved
+        if: failure()
+        run: echo "::error::stream chain not resolved; see the probe-result artifact"

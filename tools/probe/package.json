@@ -1,0 +1,13 @@
+{
+  "name": "aniwatch-probe",
+  "private": true,
+  "type": "module",
+  "description": "One-shot diagnostic: can the aniwatchtv.ws stack be reached and resolved from a normal network?",
+  "scripts": {
+    "probe": "node probe.mjs"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "cheerio": "^1.0.0"
+  }
+}

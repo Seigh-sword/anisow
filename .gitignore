@@ -13,3 +13,5 @@ output.json
 
 # Secrets: the Firebase config is generated per environment.
 app/google-services.json
+tools/probe/node_modules/
+tools/probe/probe-result.json
