@@ -1,7 +1,11 @@
-# AniLab — Kotlin rewrite
+# TryAnime — Watch any Anime
 
-AniLab is an anime streaming client. `sources/` holds the decompiled original for
-reference; `app/` is a from-scratch Kotlin implementation of the same app.
+*(Kotlin rewrite of the decompiled AniLab client. The package id and internal
+class names still say AniLab; only the user-visible name changed.)*
+
+TryAnime is an anime discovery and streaming client. It talks to the same
+backend the decompiled AniLab app used. `sources/` holds that decompiled original
+for reference; `app/` is a from-scratch Kotlin implementation.
 
 ## Layout
 
@@ -94,6 +98,13 @@ and it can be added as an opt-in layer.
   dropped: they did nothing the drawables do not do correctly.
 - Unused strings, colours and drawables (`error_generic`, `empty_result_body`,
   `color_surface_elevated`, `color_shadow`, `bg_chip`) went with them.
+
+## What is missing
+
+[`GAPS.md`](GAPS.md) maps every remaining gap: the absent video player (the API
+exposes no stream URL; playback is delegated to an external app), filters the
+backend cannot serve, the missing episode list, caching, tests and release
+signing.
 
 ## Build
 
