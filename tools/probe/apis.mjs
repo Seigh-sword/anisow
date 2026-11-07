@@ -1,10 +1,8 @@
 /**
- * Probe part 5:
- *   1. Exact markup of a card on `/search?keyword=naruto` and `/home` and `/genres/action`!
- *      Why did `collectCards` or `flw-item` behave the way it did?
- *   2. Exact `/filter` form submit behavior in `frontend-QO4TW5y5.js`
- *   3. Exact Zoko docs URL patterns (`docs-sIsMGsz7.js` and `routes-BMUbY_wy.js`)
- *   4. Anikoto API full docs & whether `/recent-anime` supports any query or if we should index/cache its pages!
+ * Probe part 6:
+ *   1. hiSubmitFilter() definition on /filter
+ *   2. Zoko docs full text (converting JSX/strings in docs-sIsMGsz7.js into readable text)
+ *   3. Detail page HTML on aniwatchtv.ws (`naruto-8020` vs `/watch/naruto-8020`): where is `mal_id` / `ani_id` / `syncData`?
  */
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
@@ -26,45 +24,32 @@ async function get(url, headers = {}) {
   }
 }
 
-// 1. Exact card HTML on /search?keyword=naruto
-const searchRes = await get("https://aniwatchtv.ws/search?keyword=naruto", { Referer: "https://aniwatchtv.ws/home" });
-const flwIdx = searchRes.text.indexOf("flw-item");
-notice("1-search-card-html", flwIdx >= 0 ? searchRes.text.slice(flwIdx - 30, flwIdx + 900) : "no flw-item");
-
-// 2. Exact filter form HTML (opening <form ...> tag + hidden inputs + submit button)
+// 1. hiSubmitFilter on /filter
 const filterRes = await get("https://aniwatchtv.ws/filter", { Referer: "https://aniwatchtv.ws/home" });
-const fIdx = filterRes.text.indexOf('name="type"');
-notice("2a-filter-form-head", fIdx >= 0 ? filterRes.text.slice(Math.max(0, fIdx - 500), fIdx + 350) : "none");
-const gIdx = filterRes.text.indexOf("f-genre-item");
-const endFormIdx = filterRes.text.indexOf("</form>", gIdx);
-notice("2b-filter-form-tail", endFormIdx >= 0 ? filterRes.text.slice(endFormIdx - 700, endFormIdx + 100) : "none");
+const hiIdx = filterRes.text.lastIndexOf("hiSubmitFilter");
+notice("1-hiSubmitFilter", hiIdx >= 0 ? filterRes.text.slice(Math.max(0, hiIdx - 400), hiIdx + 1200) : "not found");
 
-// 3. How does frontend-QO4TW5y5.js handle filter & search?
-const fe = await get("https://aniwatchtv.ws/build/assets/frontend-QO4TW5y5.js");
-const filterJs = [...fe.text.matchAll(/.{0,100}(?:f-genre-item|filter-form|search-suggest|result-).{0,200}/gi)].map((m) => m[0]);
-// Also find all `/api/` occurrences in frontend.js
-const allApiInFe = [...fe.text.matchAll(/.{0,50}\/api\/[a-z0-9/_-]+.{0,80}/gi)].map((m) => m[0]);
-notice("3a-fe-filter-js", filterJs.join(" || ") || "no f-genre-item in frontend.js");
-notice("3b-fe-all-apis", allApiInFe.join(" || "));
-
-// Check if /filter page has inline <script> for the filter form!
-const filterScripts = [...filterRes.text.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)]
-  .map((m) => m[1].trim())
-  .filter((s) => s.length > 0);
-notice("3c-filter-inline-scripts", filterScripts.join(" ||| "));
-
-// 4. Zoko docs URL patterns
+// 2. Zoko docs full text from docs-sIsMGsz7.js
 const zokoDocsJs = await get("https://zokoanime.video/assets/docs-sIsMGsz7.js");
-const zokoUrls = [...zokoDocsJs.text.matchAll(/.{0,40}(?:stream\/|download\/|zokoanime\.video|postMessage|channel).{0,90}/gi)].map((m) => m[0]);
-notice("4-zoko-docs-patterns", zokoUrls.slice(0, 15).join(" || "));
+// Extract all string literals in order so we can read the entire documentation page!
+const docText = [...zokoDocsJs.text.matchAll(/[`"']([^`"'\n\\]{3,220})[`"']/g)]
+  .map((m) => m[1])
+  .filter((s) => !/^(div|span|code|pre|section|h[1-6]|p|ul|li|table|thead|tbody|tr|th|td|flex|grid|text-|bg-|border-|px-|py-|mt-|mb-|gap-|rounded|font-|items-|justify-|w-|h-|min-|max-|overflow-|whitespace-)/.test(s))
+  .join(" | ");
+notice("2a-zoko-docs-1", docText.slice(0, 880));
+notice("2b-zoko-docs-2", docText.slice(880, 1760));
+notice("2c-zoko-docs-3", docText.slice(1760, 2640));
+notice("2d-zoko-docs-4", docText.slice(2640, 3520));
+notice("2e-zoko-docs-5", docText.slice(3520, 4400));
 
-// 5. Anikoto pagination & total count
-const anikotoP1 = await get("https://anikotoapi.site/recent-anime?page=1&per_page=100");
-let anikotoMeta = "";
-try {
-  const j = JSON.parse(anikotoP1.text);
-  anikotoMeta = JSON.stringify({ ok: j.ok, count: j.data?.length, pagination: j.pagination, domains: j.anikoto_domains, sampleKeys: Object.keys(j.data?.[0] ?? {}) });
-} catch (e) {
-  anikotoMeta = String(e);
+// 3. AniWatch watch page server items for naruto-8020 (first episode)
+const watchRes = await get("https://aniwatchtv.ws/watch/naruto-8020", { Referer: "https://aniwatchtv.ws/home" });
+const epId = watchRes.text.match(/data-id="(\d+)"[^>]*data-number="1"|data-number="1"[^>]*data-id="(\d+)"/i);
+const firstEp = epId?.[1] || epId?.[2] || watchRes.text.match(/class="[^"]*ep-item[^"]*"[^>]*data-id="(\d+)"/i)?.[1];
+if (firstEp) {
+  const srv = await get(`https://aniwatchtv.ws/api/theme/episode/servers?episodeId=${firstEp}`, { Referer: "https://aniwatchtv.ws/watch/naruto-8020" });
+  const hashes = [...srv.text.matchAll(/data-hash="([^"]+)"/g)].map((m) => {
+    try { return `${m[1]} => ${Buffer.from(m[1], "base64").toString("utf8")}`; } catch { return m[1]; }
+  });
+  notice("3-naruto-servers", `ep=${firstEp} hashes=${hashes.join(" | ")} raw=${srv.text.slice(0, 500)}`);
 }
-notice("5-anikoto-pagination", anikotoMeta);
