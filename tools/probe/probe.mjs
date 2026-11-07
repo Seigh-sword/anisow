@@ -25,17 +25,33 @@ const report = {
   verdict: "unknown",
 };
 
+/**
+ * Findings are echoed as workflow annotations. Raw logs and artifacts are not
+ * always reachable over the API, but annotations are, so that is the channel.
+ */
+function announce(text) {
+  const flat = String(text).replace(/\r?\n/g, " ");
+  for (let i = 0; i < flat.length; i += 900) {
+    // eslint-disable-next-line no-console
+    console.log(`::warning::PROBE ${flat.slice(i, i + 900)}`);
+  }
+}
+
 function step(name, ok, detail) {
   report.steps.push({ name, ok, detail });
   const mark = ok ? "PASS" : "FAIL";
   console.log(`\n[${mark}] ${name}`);
   if (detail !== undefined) {
     console.log(typeof detail === "string" ? detail : JSON.stringify(detail, null, 2));
+    announce(`${mark} ${name}: ${JSON.stringify(detail)}`);
+  } else {
+    announce(`${mark} ${name}`);
   }
 }
 
 function fatal(name, detail) {
   step(name, false, detail);
+  announce(`VERDICT blocked at ${name}`);
   report.verdict = `blocked at: ${name}`;
   finish(1);
 }
@@ -45,6 +61,7 @@ function finish(code) {
   writeFileSync("probe-result.json", JSON.stringify(report, null, 2));
   console.log("\n===== VERDICT =====");
   console.log(report.verdict);
+  announce(`FINAL ${report.verdict}`);
   process.exit(code);
 }
 
