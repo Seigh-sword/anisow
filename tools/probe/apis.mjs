@@ -1,5 +1,9 @@
 /**
- * Probe part 2 — keep ≤8 annotations so GitHub doesn't cap at 10!
+ * Probe part 3:
+ *   1. Full zokoanime.video/docs content (both HTML/text and any linked JS/API if it's an SPA)
+ *   2. Exact AniWatch /filter form (sort options, genre input names/values)
+ *   3. Exact AniWatch detail page markup (where mal_id / anilist_id / syncData live so we can construct Zoko & Anikoto URLs directly!)
+ *   4. Exact AniWatch search suggest endpoint (check theme JS for the real URL)
  */
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
@@ -21,63 +25,58 @@ async function get(url, headers = {}) {
   }
 }
 
-function stripHtml(html) {
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-// 1. Anikoto root docs text
-const anikotoRoot = await get("https://anikotoapi.site/");
-notice("1-anikoto-docs", stripHtml(anikotoRoot.text));
-
-// 2. Zoko docs text (part 1 and part 2)
+// 1. Zoko docs raw HTML + any JS bundle it loads
 const zoko = await get("https://zokoanime.video/docs");
-const zokoText = stripHtml(zoko.text);
-notice("2a-zoko-docs", zokoText.slice(0, 880));
-notice("2b-zoko-docs", zokoText.slice(880, 1760));
-notice("2c-zoko-docs", zokoText.slice(1760, 2640));
+notice("1a-zoko-html", zoko.text.slice(0, 880));
+notice("1b-zoko-html2", zoko.text.slice(880, 1760));
+const zokoScripts = [...zoko.text.matchAll(/src="([^"]+\.js[^"]*)"/gi)].map((m) => m[1]);
+if (zokoScripts.length > 0) {
+  const sUrl = zokoScripts[0].startsWith("http") ? zokoScripts[0] : `https://zokoanime.video${zokoScripts[0]}`;
+  const js = await get(sUrl);
+  // Look for stream/, api/, mal, anilist, imdb, postMessage, etc. in the JS bundle
+  const hits = [...js.text.matchAll(/.{0,60}(?:stream\/|zokoanime|anilist|mal|episode|embed|api\/).{0,80}/gi)]
+    .map((m) => m[0])
+    .slice(0, 15);
+  notice("1c-zoko-js", `script=${sUrl} len=${js.text.length} hits=${hits.join(" || ")}`);
+} else {
+  notice("1c-zoko-html3", zoko.text.slice(1760, 3500));
+}
 
-// 3. AniWatch /filter form selects & inputs
+// 2. AniWatch /filter form — find the filter form specifically (the one with select name="type")
 const filterPage = await get("https://aniwatchtv.ws/filter", { Referer: "https://aniwatchtv.ws/home" });
+const forms = [...filterPage.text.matchAll(/<form[\s\S]*?<\/form>/gi)].map((m) => m[0]);
+const filterForm = forms.find((f) => f.includes('name="type"') || f.includes('name="status"')) ?? "";
 const selects = [];
-for (const m of filterPage.text.matchAll(/<select[^>]*name="([^"]+)"[^>]*>([\s\S]*?)<\/select>/gi)) {
-  const name = m[1];
+for (const m of filterForm.matchAll(/<select[^>]*name="([^"]+)"[^>]*>([\s\S]*?)<\/select>/gi)) {
   const opts = [...m[2].matchAll(/<option[^>]*value="([^"]*)"[^>]*>([\s\S]*?)<\/option>/gi)]
-    .map((o) => `${o[1]}:${o[2].replace(/<[^>]+>/g, "").trim()}`)
-    .slice(0, 12);
-  selects.push(`${name}=[${opts.join(",")}]`);
+    .map((o) => `${o[1]}:${o[2].replace(/<[^>]+>/g, "").trim()}`);
+  selects.push(`${m[1]}=[${opts.join(",")}]`);
 }
-const inputs = [...filterPage.text.matchAll(/<input[^>]*>/gi)]
-  .map((m) => m[0])
-  .filter((tag) => /genre|type|status|rated|score|season|language|sort|keyword/i.test(tag))
-  .slice(0, 12);
-notice("3a-aniwatch-filter-selects", `status=${filterPage.status} selects=${selects.join(" | ")}`);
-notice("3b-aniwatch-filter-body", filterPage.text.slice(filterPage.text.indexOf("<form"), filterPage.text.indexOf("</form>") + 7).replace(/\s+/g, " "));
+notice("2a-filter-selects-tail", selects.slice(-5).join(" | "));
+// How are genres represented inside filterForm?
+const genrePos = filterForm.toLowerCase().indexOf("genre");
+notice("2b-filter-genres-markup", genrePos >= 0 ? filterForm.slice(genrePos, genrePos + 1400) : "no genre in form");
 
-// 4. AniWatch search & filter requests
-const searchResults = [];
-for (const p of [
-  "/search?keyword=one+piece",
-  "/filter?keyword=one+piece",
-  "/filter?type=tv&status=currently-airing",
-  "/filter?genres=action",
-  "/api/theme/search/suggest?keyword=one",
-  "/api/theme/ajax?action=search&keyword=one",
-]) {
-  const r = await get(`https://aniwatchtv.ws${p}`, { Referer: "https://aniwatchtv.ws/home" });
-  const cards = [...r.text.matchAll(/\/watch\/[a-z0-9-]+-\d+/g)].length;
-  searchResults.push(`${p}->${r.status}(${cards}cards,${r.text.length}B,sample:${r.text.slice(0, 100).replace(/\s+/g, " ")})`);
+// 3. AniWatch watch/detail page — does it expose mal_id or anilist_id?
+const searchPage = await get("https://aniwatchtv.ws/search?keyword=naruto", { Referer: "https://aniwatchtv.ws/home" });
+const firstWatch = searchPage.text.match(/href="([^"]*\/watch\/([a-z0-9-]+-\d+))"/i);
+const slug = firstWatch?.[2] ?? "naruto-677";
+const detailPage = await get(`https://aniwatchtv.ws/${slug}`, { Referer: "https://aniwatchtv.ws/home" });
+const watchPage = await get(`https://aniwatchtv.ws/watch/${slug}`, { Referer: "https://aniwatchtv.ws/home" });
+const malMatches = [
+  ...(detailPage.text.matchAll(/.{0,50}(?:mal_id|anilist|syncData|data-mal|data-id).{0,80}/gi)),
+  ...(watchPage.text.matchAll(/.{0,50}(?:mal_id|anilist|syncData|data-mal|hianime).{0,80}/gi)),
+].map((m) => m[0].trim()).slice(0, 12);
+notice("3-detail-watch-ids", `slug=${slug} detailStatus=${detailPage.status}(${detailPage.text.length}B) watchStatus=${watchPage.status} matches=${malMatches.join(" || ")}`);
+
+// 4. AniWatch theme JS — how does search autocomplete and filter submission work?
+const jsUrls = [...watchPage.text.matchAll(/src="([^"]+\.js[^"]*)"/gi)].map((m) => m[1]);
+const jsSnippets = [];
+for (const u of jsUrls) {
+  if (/jquery|bootstrap|swiper|lazyload|analytics|cloudflare/i.test(u)) continue;
+  const full = u.startsWith("http") ? u : `https://aniwatchtv.ws${u}`;
+  const r = await get(full);
+  const endpoints = [...r.text.matchAll(/.{0,40}(?:\/api\/|search|suggest|filter|genres).{0,60}/gi)].map((m) => m[0].trim()).slice(0, 10);
+  jsSnippets.push(`${u}(${r.text.length}B): ${endpoints.join(" ; ")}`);
 }
-notice("4-aniwatch-search-tests", searchResults.join(" ;; "));
-
-// 5. AniWatch home search form + inline script endpoints
-const home = await get("https://aniwatchtv.ws/home");
-const forms = [...home.text.matchAll(/<form[\s\S]*?<\/form>/gi)].map((m) => m[0].replace(/\s+/g, " "));
-const scripts = [...home.text.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)]
-  .map((m) => m[1].replace(/\s+/g, " "))
-  .filter((s) => s.length > 20 && (s.includes("search") || s.includes("filter") || s.includes("hianime")));
-notice("5-aniwatch-home-search", `forms=${forms.join(" || ")} scripts=${scripts.join(" || ")}`);
+notice("4-aniwatch-theme-js", jsSnippets.join(" ||| "));
