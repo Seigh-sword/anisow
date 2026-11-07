@@ -80,8 +80,12 @@ function base64Decode(input: string): string | null {
       for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
       return new TextDecoder().decode(bytes);
     }
-    // Node (tests, the probe).
-    return Buffer.from(padded, "base64").toString("utf8");
+    // Node (tests, the probe). Reached only when `atob` is missing, and read
+    // through `globalThis` so this package type-checks in a browser lib config
+    // (no @types/node) without losing the Node path at runtime.
+    const nodeBuffer = (globalThis as { Buffer?: { from(input: string, encoding: string): { toString(encoding: string): string } } }).Buffer;
+    if (!nodeBuffer) return null;
+    return nodeBuffer.from(padded, "base64").toString("utf8");
   } catch {
     return null;
   }

@@ -1,0 +1,19 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "jsx": "react-jsx",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@anispots/core": ["../../packages/core/src/index.ts"],
+      "@anispots/design": ["../../packages/design/src/tokens.ts"]
+    }
+  },
+  "include": ["src", "App.tsx", "index.js", "app.json"],
+  "exclude": ["node_modules", "dist-bundle"]
+}

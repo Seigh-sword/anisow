@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "AniSpots",
+    "slug": "anispots",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "anispots",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "backgroundColor": "#07080E",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": [
+      "assets/**/*"
+    ],
+    "android": {
+      "package": "com.seigh.anispots",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#07080E"
+      },
+      "softwareKeyboardLayoutMode": "pan",
+      "notification": {
+        "icon": "./assets/notification-icon.png",
+        "color": "#007BFF"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.seigh.anispots",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
+      },
+      "icon": "./assets/icon.png"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "extra": {
+      "apiBase": "https://aniwatchtv.ws"
+    }
+  }
+}
