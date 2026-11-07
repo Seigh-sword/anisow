@@ -68,6 +68,14 @@ function finish(code) {
 /** Absolute paths must not be appended to BASE again. */
 const join = (path) => (/^https?:\/\//i.test(path) ? path : `${BASE}${path}`);
 
+const safeJson = (text) => {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+};
+
 const client = axios.create({
   timeout: 30000,
   headers: {
@@ -408,7 +416,7 @@ async function probeServers(episodeId, declared = {}) {
     });
   });
 
-  step("servers in watch markup", true, {
+  step("servers decoded", true, {
     count: servers.length,
     servers: servers.slice(0, 5),
   });
