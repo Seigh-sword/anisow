@@ -65,6 +65,9 @@ function finish(code) {
   process.exit(code);
 }
 
+/** Absolute paths must not be appended to BASE again. */
+const join = (path) => (/^https?:\/\//i.test(path) ? path : `${BASE}${path}`);
+
 const client = axios.create({
   timeout: 30000,
   headers: {
@@ -239,6 +242,55 @@ async function probeDeclaredRoutes(watch) {
 }
 
 /**
+ * 2d. Read the client's own JavaScript.
+ *
+ * The watch page loads theme/js/watch.min.js and a compiled bundle. Those files
+ * are what call the API, so the endpoint names are string literals inside them.
+ * This beats guessing routes: it is the client's actual request list.
+ */
+async function probeClientScripts(watch) {
+  const res = await client.get(watch.url);
+  const html = String(res.data);
+
+  const srcs = [...html.matchAll(/<script[^>]+src="([^"]+)"/g)]
+    .map((m) => m[1])
+    .filter((u) => u.startsWith(BASE) || u.startsWith("/"))
+    .slice(0, 8);
+
+  const apiPaths = new Set();
+  const actions = new Set();
+  const scanned = [];
+
+  for (const src of srcs) {
+    const r = await client.get(join(src));
+    if (r.status !== 200) {
+      scanned.push({ src, status: r.status });
+      continue;
+    }
+    const js = String(r.data);
+    scanned.push({ src, bytes: js.length });
+
+    for (const m of js.matchAll(/["'`](\/api\/[a-zA-Z0-9/_${}.:-]{2,80})["'`]/g)) {
+      apiPaths.add(m[1]);
+    }
+    for (const m of js.matchAll(/action["'\s:=]+["']([a-z0-9_]{3,40})["']/g)) {
+      actions.add(m[1]);
+    }
+    for (const m of js.matchAll(/["']((?:episode|servers?|sources?|stream|watch)[a-z_/-]{2,40})["']/g)) {
+      actions.add(m[1]);
+    }
+  }
+
+  const detail = {
+    scanned,
+    apiPaths: [...apiPaths].slice(0, 40),
+    actions: [...actions].slice(0, 40),
+  };
+  step("scan client scripts", true, detail);
+  return detail;
+}
+
+/**
  * 3. The AJAX route for servers. The path moved between site generations, so try
  *    the known shapes rather than assuming one.
  */
@@ -248,7 +300,12 @@ async function probeServers(episodeId, declared = {}) {
   const declaredRest = declared.hianime_ajax_urls?.find((u) => u.includes("rest"));
   const epRest = declared.hianime_ep_ajax_urls?.find((u) => u.includes("ajax") || u.includes("rest"));
 
+  const discovered = (declared.apiPaths || [])
+    .filter((p) => /episode|server|source|stream/i.test(p))
+    .map((p) => `${p}${p.includes("?") ? "&" : "?"}episodeId=${episodeId}`);
+
   const paths = [
+    ...discovered,
     ...(epRest ? [`${epRest.replace(/\/$/, "")}`] : []),
     ...(declaredAjax ? [`${declaredAjax}?action=servers&episodeId=${episodeId}`] : []),
     ...(declaredRest ? [`${declaredRest.replace(/\/$/, "")}/servers?episodeId=${episodeId}`] : []),
@@ -258,7 +315,7 @@ async function probeServers(episodeId, declared = {}) {
 
   const attempts = [];
   for (const path of paths) {
-    const res = await client.get(`${BASE}${path}`, {
+    const res = await client.get(join(path), {
       headers: { "X-Requested-With": "XMLHttpRequest", Referer: `${BASE}/home` },
     });
     const body = typeof res.data === "string" ? res.data : JSON.stringify(res.data);
@@ -293,7 +350,7 @@ async function probeSources(server) {
 
   const attempts = [];
   for (const path of paths) {
-    const res = await client.get(`${BASE}${path}`, {
+    const res = await client.get(join(path), {
       headers: { "X-Requested-With": "XMLHttpRequest", Referer: `${BASE}/home` },
     });
     const body = typeof res.data === "string" ? res.data : JSON.stringify(res.data);
@@ -371,7 +428,8 @@ try {
   const watch = await probeWatch([...seeds, ...fallback]);
   await probeDiscovery(watch);
   const declared = await probeDeclaredRoutes(watch);
-  const servers = await probeServers(watch.episodeIds[0], declared);
+  const scripts = await probeClientScripts(watch);
+  const servers = await probeServers(watch.episodeIds[0], { ...declared, ...scripts });
   const chosen = servers.find((s) => s.type !== "dub") || servers[0];
   const sources = await probeSources(chosen);
   await probeEmbed(sources);
