@@ -365,9 +365,26 @@ async function probeServers(episodeId, declared = {}) {
   const page = res.status === 200 && $(".server-item").length ? html : null;
 
   if (!page) {
+    // Report the markup itself: the class names are the thing to learn, and a
+    // markdown render of the page cannot show them.
+    const serverishClasses = new Set();
+    $("[class]").each((_, el) => {
+      const cls = String($(el).attr("class") || "");
+      if (/server|player|embed|watch/i.test(cls)) serverishClasses.add(cls.slice(0, 120));
+    });
+
+    const hashCount = (html.match(/data-hash=/g) || []).length;
+    const vidstreamIdx = html.search(/vidstream|megacloud|megaplay|zokoanime/i);
+    const serverIdx = html.search(/servers-content|server-item|server-list/i);
+
     return fatal("servers in watch markup", {
       status: res.status,
       serverItems: $(".server-item").length,
+      dataHashCount: hashCount,
+      serverishClasses: [...serverishClasses].slice(0, 12),
+      aroundServerMention: serverIdx >= 0 ? html.slice(serverIdx - 200, serverIdx + 700).replace(/\s+/g, " ") : null,
+      aroundPlayerHost: vidstreamIdx >= 0 ? html.slice(vidstreamIdx - 300, vidstreamIdx + 500).replace(/\s+/g, " ") : null,
+      hasIframe: /<iframe/i.test(html),
     });
   }
 
