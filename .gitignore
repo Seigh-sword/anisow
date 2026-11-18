@@ -10,12 +10,24 @@ node_modules/
 /build/
 /out/
 apps/*/dist/
-apps/*/build/
 apps/*/out/
 *.tsbuildinfo
 .expo/
 .expo-shared/
 web-build/
+
+# The desktop app's packaging output.
+#
+# Its `build/` folder holds the entitlements and the installer script, which
+# are source and are tracked. A negation cannot re-include a file inside an
+# excluded directory, so the directory itself is un-ignored and the generated
+# files inside it are excluded by name.
+apps/*/build/
+!apps/desktop/build/
+apps/desktop/build/*
+!apps/desktop/build/entitlements.mac.plist
+!apps/desktop/build/installer.nsh
+apps/desktop/dist/
 
 # Native
 *.apk

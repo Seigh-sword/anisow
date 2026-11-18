@@ -1,0 +1,27 @@
+{
+  "name": "@anispots/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "AniSpots for the desktop — an Electron shell around the web app.",
+  "main": "src/main.cjs",
+  "author": "AniSpots",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "node scripts/build.mjs",
+    "dist": "node scripts/build.mjs",
+    "test": "node --test src/*.test.cjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "electron-updater": "6.3.9"
+  },
+  "devDependencies": {
+    "app-builder-bin": "4.2.0",
+    "electron": "33.3.1",
+    "electron-builder": "25.1.8",
+    "typescript": "^5.6.3"
+  }
+}

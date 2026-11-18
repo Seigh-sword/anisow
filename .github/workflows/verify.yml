@@ -67,6 +67,29 @@ jobs:
           npm run icons
           ls -la apps/mobile/assets
 
+      - name: Desktop server tests
+        # The desktop app's own server is the piece that can fail quietly:
+        # a path traversal or an open relay would not show up anywhere else.
+        run: npm run test --workspace @anispots/desktop
+
+      - name: The desktop app serves the web build
+        run: |
+          node -e "
+            const { startServer } = require('./apps/desktop/src/server.cjs');
+            startServer({ root: 'apps/web/dist', host: '127.0.0.1' }).then(async ({ server, url }) => {
+              const page = await fetch(url + '/');
+              const html = await page.text();
+              console.log('GET /', page.status);
+              if (page.status !== 200) throw new Error('desktop server did not serve the app');
+              if (!html.includes('id=\"root\"')) throw new Error('the served page is not the app');
+              const route = await fetch(url + '/settings');
+              console.log('GET /settings', route.status);
+              if (route.status !== 200) throw new Error('client routes do not fall back to the app');
+              server.close();
+              process.exit(0);
+            }).catch((e) => { console.error(e); process.exit(1); });
+          "
+
       - name: Production server starts
         run: |
           node -e "

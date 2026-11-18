@@ -1,0 +1,115 @@
+# How the desktop app is packaged.
+#
+# The targets are the four the user asked for, and none of them is an archive:
+#
+#   Windows   .exe  — the graphical installer (NSIS), with a wizard
+#            .msi  — the Windows Installer package
+#   Linux     .deb  — the Debian package
+#            .AppImage — runs from the file, no install, no root
+#   macOS     .dmg  — the disk image
+#
+# Every artefact is named `AniSpots-<version>-<arch>.<ext>` so the release
+# page reads clearly and each file downloads and runs on its own.
+
+appId: com.seigh.anispots
+productName: AniSpots
+copyright: Copyright © AniSpots
+
+directories:
+  output: dist
+  buildResources: build
+
+# Only the web build and the shell travel in the package.
+files:
+  - src/**/*
+  - package.json
+  - "!**/*.map"
+
+# The built SPA is copied next to the app's resources at install time.
+extraResources:
+  - from: ../web/dist
+    to: web
+    filter:
+      - "**/*"
+
+# The updater reads this to know where the latest release is.
+publish:
+  provider: github
+  owner: Seigh-sword
+  repo: anisow
+  releaseType: release
+  channel: latest
+
+# The graphical installer.
+#
+# A custom script, so the wizard has the pages a person expects, creates the
+# folder, and leaves the downloads alone when the app is uninstalled.
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: AniSpots
+  installerIcon: build/icon.ico
+  uninstallDisplayName: AniSpots
+  include: build/installer.nsh
+  artifactName: "${productName}-${version}-${arch}-setup.${ext}"
+
+# The Windows Installer package.
+msi:
+  perMachine: false
+  runAfterFinish: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: AniSpots
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+
+deb:
+  priority: optional
+  category: AudioVideo
+  depends:
+    - libgtk-3-0
+    - libnotify4
+    - libnss3
+    - libxss1
+    - libxtst6
+    - xdg-utils
+    - libatspi2.0-0
+    - libuuid1
+    - libsecret-1-0
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+
+appImage:
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+
+dmg:
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+  contents:
+    - x: 140
+      y: 200
+      type: file
+    - x: 400
+      y: 200
+      type: link
+      path: /Applications
+
+mac:
+  category: public.app-category.entertainment
+  target:
+    - dmg
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+
+win:
+  target:
+    - nsis
+    - msi
+
+linux:
+  target:
+    - AppImage
+    - deb
+  category: AudioVideo
