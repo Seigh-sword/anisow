@@ -3,6 +3,7 @@ import { Shell } from "./components/Shell";
 import { Home } from "./pages/Home";
 import { Search } from "./pages/Search";
 import { Browse } from "./pages/Browse";
+import { SchedulePage } from "./pages/Schedule";
 import { Detail } from "./pages/Detail";
 import { Watch } from "./pages/Watch";
 import { Downloads } from "./pages/Downloads";
@@ -32,6 +33,7 @@ export function App() {
               <Route path="/search" element={<Search />} />
               <Route path="/browse" element={<Browse />} />
               <Route path="/browse/:category" element={<Browse />} />
+              <Route path="/schedule" element={<SchedulePage />} />
               <Route path="/anime/:id" element={<Detail />} />
               <Route path="/downloads" element={<Downloads />} />
               <Route path="/watchlist" element={<Watchlist />} />

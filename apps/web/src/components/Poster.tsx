@@ -58,12 +58,12 @@ export function Poster({
       }}
     >
       <div
-        className="poster"
+        className="poster poster-card"
         style={{
           width: boxWidth,
           height,
           boxShadow: "0 14px 28px -18px rgba(0,0,0,0.9)",
-          outline: "1px solid rgba(255,255,255,0.06)",
+          outline: "1px solid var(--stroke-subtle)",
           outlineOffset: -1,
         }}
       >
@@ -124,6 +124,18 @@ export function Poster({
                 backgroundImage: "var(--brand-gradient)",
               }}
             />
+          </span>
+        )}
+
+        {/**
+         * The description, over a black-to-transparent gradient that covers
+         * only the lower part of the artwork. The text is white in both
+         * themes, which is right in both: the gradient behind it is always
+         * dark.
+         */}
+        {anime.description && (
+          <span className="poster-hover-desc" data-testid="poster-hover-desc">
+            {anime.description}
           </span>
         )}
       </div>

@@ -92,9 +92,12 @@ jobs:
         if: failure()
         run: |
           # The build log is not always in the step output, so the dist folder
-          # is listed to show how far it got.
+          # is listed to show how far it got, and the packaging is re-run with
+          # the debug flag so the reason is in the log.
           ls -la apps/desktop/dist 2>/dev/null || echo "nothing was produced"
-          ls -la node_modules/electron/dist 2>/dev/null | head -5 || echo "no electron dist"
+          echo "--- retrying with debug output ---"
+          cd apps/desktop
+          DEBUG=electron-builder npx electron-builder --${{ matrix.platform }} --${{ matrix.arch }} --publish never 2>&1 | tail -60
 
       - name: Collect the artefacts
         uses: actions/upload-artifact@v4

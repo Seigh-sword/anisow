@@ -30,6 +30,57 @@ export interface AnimeCard {
   description?: string;
   /** Age rating-ish badge, e.g. `PG-13`. */
   badge?: string;
+  /** The genres, when the source knows them. Used to rank recommendations. */
+  genres?: string[];
+  /** A score out of ten, as a string so the source's formatting is kept. */
+  score?: string;
+  /** How many people have it on their list. */
+  popularity?: number;
+  /** The studio or studios that made it. */
+  studios?: string[];
+  /** The weekday it airs, lowercase. */
+  day?: string;
+  /** The time it airs, as the source writes it. */
+  time?: string;
+}
+
+/** One entry in the weekly schedule. */
+export interface ScheduleEntry extends AnimeCard {
+  /** `monday`, `tuesday`, … */
+  day: string;
+  /** `18:00`, when the source states one. */
+  time?: string;
+  /** The full sentence the source uses, e.g. "Mondays at 18:00 (JST)". */
+  airingString?: string;
+}
+
+/** A person in the cast, or a character they play. */
+export interface CastMember {
+  /** The character's name. */
+  name: string;
+  /** The voice actor, when the source pairs the two. */
+  actor?: string;
+  /** A portrait of the character or the actor. */
+  image?: string;
+  /** `Main` or `Supporting`. */
+  role?: string;
+  /** The voice actors in other languages. */
+  voiceActors?: { language: string; name: string; image?: string }[];
+}
+
+/** One season, or one related entry in a franchise. */
+export interface SeasonRelation {
+  /** The MAL id of the related entry. */
+  id: string;
+  title: string;
+  /** `prequel`, `sequel`, `side story`, `parent story`, … */
+  relation?: string;
+  /** `TV`, `Movie`, … */
+  format?: string;
+  poster?: string;
+  year?: number;
+  /** Episode count, when known. */
+  count?: number;
 }
 
 /** The large slide at the top of Home. */
@@ -67,6 +118,20 @@ export interface AnimeDetails extends AnimeCard {
   /** AniList / MAL IDs when known, used to build ZokoAnime stream/download URLs. */
   anilistId?: string;
   malId?: string;
+  /** The cast, when it could be read. */
+  cast?: CastMember[];
+  /** The other seasons in the franchise. */
+  seasons?: SeasonRelation[];
+  /** How many people have it on their list. */
+  popularity?: number;
+  /** How many members are in the club. */
+  members?: number;
+  /** What the show is adapted from, e.g. `Manga`. */
+  sourceMaterial?: string;
+  /** The official trailer, as a YouTube embed URL. */
+  trailerEmbedUrl?: string;
+  /** The trailer's YouTube id, for a thumbnail. */
+  trailerYoutubeId?: string;
 }
 
 /**

@@ -12,7 +12,10 @@ export {
   createClient,
   DEFAULT_ANIKOTO_BASE,
   DEFAULT_BASE,
+  DEFAULT_MAL_BASE,
   DEFAULT_ZOKO_BASE,
+  rankSimilarByGenresAndPopularity,
+  reorderAndRenameRails,
 } from "./api/client.ts";
 export type { ClientOptions, Result } from "./api/client.ts";
 export {

@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Glass } from "./Glass";
+import { MoonIcon, SunIcon } from "./Button";
 import { DEMO, isDemoActive } from "../lib/demo";
+import { useTheme } from "../lib/theme";
 
 /**
  * The app frame: a brand backdrop, a scroll area that floats above the nav, and
@@ -27,6 +29,7 @@ const Icon = ({ path }: { path: string }) => (
 const TABS: Tab[] = [
   { to: "/", label: "Home", icon: <Icon path="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z" /> },
   { to: "/browse", label: "Browse", icon: <Icon path="M4 5h7v7H4zM13 5h7v7h-7zM4 14h7v7H4zM13 14h7v7h-7z" /> },
+  { to: "/schedule", label: "Schedule", icon: <Icon path="M4 6h16v15H4zM4 10h16M8 3v4M16 3v4" /> },
   { to: "/search", label: "Search", icon: <Icon path="M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13M20 20l-4.6-4.6" /> },
   { to: "/downloads", label: "Downloads", icon: <Icon path="M12 3v11m0 0 4-4m-4 4-4-4M4 20h16" /> },
   { to: "/watchlist", label: "Watchlist", icon: <Icon path="M6 3h12v18l-6-4.5L6 21z" /> },
@@ -83,7 +86,7 @@ export function BrandBackdrop() {
         style={{
           position: "absolute",
           inset: 0,
-          background: "linear-gradient(180deg, rgba(7,8,14,0.35), rgba(7,8,14,0.92) 60%, #07080E)",
+          background: "var(--backdrop-wash)",
         }}
       />
     </div>
@@ -145,7 +148,7 @@ export function BottomNav() {
                     borderRadius: 16,
                     textDecoration: "none",
                     color: active ? "var(--text)" : "var(--text-faint)",
-                    background: active ? "rgba(255,255,255,0.09)" : "transparent",
+                    background: active ? "var(--surface-pill-active)" : "transparent",
                     transition: "color 180ms ease, background 180ms ease",
                     position: "relative",
                   }}
@@ -216,11 +219,63 @@ function DemoBadge() {
   );
 }
 
+/**
+ * The theme toggle.
+ *
+ * A small floating pill, always in the same corner, so the mode can be
+ * changed without going to Settings. It is a real button with a label, so it
+ * works with a keyboard and announces itself to a screen reader.
+ */
+export function ThemeToggleBar() {
+  const { theme, toggleTheme } = useTheme();
+  const light = theme === "light";
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: "calc(12px + env(safe-area-inset-top))",
+        right: 12,
+        zIndex: 60,
+      }}
+    >
+      <button
+        type="button"
+        onClick={toggleTheme}
+        data-testid="theme-toggle"
+        aria-label={light ? "Switch to dark mode" : "Switch to light mode"}
+        title={light ? "Switch to dark mode" : "Switch to light mode"}
+        className="pressable"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 7,
+          height: 38,
+          padding: "0 13px",
+          borderRadius: 999,
+          border: "1px solid var(--btn-glass-border)",
+          background: "var(--btn-glass-bg)",
+          backdropFilter: "blur(14px) saturate(1.4)",
+          WebkitBackdropFilter: "blur(14px) saturate(1.4)",
+          color: "var(--btn-glass-text)",
+          fontSize: 12.5,
+          fontWeight: 700,
+          cursor: "pointer",
+        }}
+      >
+        {light ? <MoonIcon size={15} /> : <SunIcon size={15} />}
+        <span>{light ? "Dark" : "Light"}</span>
+      </button>
+    </div>
+  );
+}
+
 export function Shell({ children }: { children: ReactNode }) {
   return (
     <>
       <BrandBackdrop />
       <DemoBadge />
+      <ThemeToggleBar />
       <Page>{children}</Page>
       <BottomNav />
     </>

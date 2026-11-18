@@ -10,6 +10,7 @@ import {
   demoEpisodes,
   demoGenres,
   demoHome,
+  demoSchedule,
   demoSearch,
   demoServers,
   markDemo,
@@ -88,10 +89,26 @@ export function localRails(progressFor: (animeId: string) => number | undefined)
 
 /* ----------------------------------------------------------------- detail */
 
+/**
+ * Everything the detail screen shows.
+ *
+ * The site's own page has the title, the artwork and the episode list. The
+ * cast, the franchise's other seasons and the official trailer come from
+ * Jikan, so the detail page asks for them afterwards and folds them in. A
+ * missing trailer is a missing trailer — it never fails the screen.
+ */
 export const loadDetails = async (animeId: string) =>
-  cached(`details:${animeId}`, () =>
-    attempt(() => api.details(animeId).then(unwrap), () => demoDetails(animeId)),
-  );
+  cached(`details:${animeId}`, async () => {
+    const details = await attempt(
+      () => api.details(animeId).then(unwrap),
+      () => demoDetails(animeId),
+    );
+
+    if (!details.malId) return details;
+
+    const enriched = await api.enrichDetailsWithMalAndCatalog(details);
+    return enriched.ok ? enriched.data : details;
+  });
 
 export const loadEpisodes = async (animeId: string) =>
   cached(`episodes:${animeId}`, () =>
@@ -174,4 +191,18 @@ export const loadFilter = async (params: FilterParams) => {
 export const loadAnikotoRecent = async (page = 1, perPage = 24) =>
   cached(`anikoto:recent:${page}:${perPage}`, () =>
     attempt(() => api.anikotoRecent(page, perPage).then(unwrap), demoBrowse),
+  );
+
+/* --------------------------------------------------------------- schedule */
+
+/**
+ * The week's broadcasts.
+ *
+ * The whole week is fetched at once and grouped on the page, so picking a day
+ * is instant rather than another round trip. The cache is short-lived: a
+ * schedule that is a day out of date is worse than no schedule.
+ */
+export const loadSchedule = async (day?: string) =>
+  cached(`schedule:${day ?? "all"}`, () =>
+    attempt(() => api.schedule(day).then(unwrap), () => demoSchedule(day)),
   );

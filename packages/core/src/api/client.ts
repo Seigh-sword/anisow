@@ -17,7 +17,18 @@
  * mismatch (a quoted `score`) took out every screen that showed one.
  */
 
-import type { AnimeCard, AnimeDetails, Episode, FilterParams, HomeRails, Rail, Spotlight } from "../model.ts";
+import type {
+  AnimeCard,
+  AnimeDetails,
+  CastMember,
+  Episode,
+  FilterParams,
+  HomeRails,
+  Rail,
+  ScheduleEntry,
+  SeasonRelation,
+  Spotlight,
+} from "../model.ts";
 import { parseDownloads, parseEpisodes, parseServers, readFragment } from "../parse/fragments.ts";
 import {
   animeIdFromHref,
@@ -33,6 +44,7 @@ import {
 export const DEFAULT_BASE = "https://aniwatchtv.ws";
 export const DEFAULT_ANIKOTO_BASE = "https://anikotoapi.site";
 export const DEFAULT_ZOKO_BASE = "https://zokoanime.video";
+export const DEFAULT_MAL_BASE = "https://api.jikan.moe/v4";
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string; status?: number };
 
@@ -42,6 +54,8 @@ export interface ClientOptions {
   anikotoBaseUrl?: string;
   /** Optional ZokoAnime API base URL (`https://zokoanime.video`). */
   zokoBaseUrl?: string;
+  /** Optional Jikan base URL, for the cast, the seasons and the trailer. */
+  malBaseUrl?: string;
   /** Injected so tests do not touch the network. */
   fetchImpl?: typeof fetch;
   /** Per-request timeout; the site is sometimes slow to first byte. */
@@ -54,10 +68,16 @@ const UA =
 
 const TYPE_SLUGS = new Set(["tv", "movie", "ova", "ona", "special", "music"]);
 
+/** A JSON value that is an object rather than an array or a primitive. */
+function isRecord(value: unknown): value is Record<string, any> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export class AniWatchClient {
   readonly baseUrl: string;
   readonly anikotoBaseUrl: string;
   readonly zokoBaseUrl: string;
+  readonly malBaseUrl: string;
   private readonly fetchImpl: typeof fetch;
   private readonly timeoutMs: number;
   private readonly userAgent: string;
@@ -70,6 +90,7 @@ export class AniWatchClient {
     this.baseUrl = (options.baseUrl ?? DEFAULT_BASE).replace(/\/$/, "");
     this.anikotoBaseUrl = (options.anikotoBaseUrl ?? DEFAULT_ANIKOTO_BASE).replace(/\/$/, "");
     this.zokoBaseUrl = (options.zokoBaseUrl ?? DEFAULT_ZOKO_BASE).replace(/\/$/, "");
+    this.malBaseUrl = (options.malBaseUrl ?? DEFAULT_MAL_BASE).replace(/\/$/, "");
     this.fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
     this.timeoutMs = options.timeoutMs ?? 20_000;
     this.userAgent = options.userAgent ?? UA;
@@ -364,6 +385,217 @@ export class AniWatchClient {
         .map(([slug, name]) => ({ slug, name }))
         .sort((a, b) => a.name.localeCompare(b.name)),
     };
+  }
+
+  // -------------------------------------------------------------------- mal
+
+  /**
+   * The Jikan API.
+   *
+   * Jikan is MyAnimeList's public API. It is the only source for the cast,
+   * the franchise's other seasons and the official trailer — the site itself
+   * does not carry them.
+   *
+   * It asks for at most three requests a second, so the caller is expected to
+   * cache; the web proxy does.
+   */
+  async malRequest<T>(path: string): Promise<Result<T>> {
+    const url = `${this.malBaseUrl}${path}`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    try {
+      const response = await this.fetchImpl(url, {
+        signal: controller.signal,
+        headers: {
+          "User-Agent": this.userAgent,
+          Accept: "application/json",
+          Referer: "https://myanimelist.net/",
+        },
+      });
+
+      if (!response.ok) {
+        return { ok: false, error: `Jikan answered ${response.status}`, status: response.status };
+      }
+
+      return { ok: true, data: (await response.json()) as T };
+    } catch (cause) {
+      return {
+        ok: false,
+        error: cause instanceof Error ? cause.message : "Jikan request failed",
+      };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /**
+   * The weekly schedule.
+   *
+   * Jikan's schedule is already grouped by weekday, so the day comes back
+   * with each entry rather than being worked out here.
+   */
+  async schedule(day?: string): Promise<Result<ScheduleEntry[]>> {
+    const wanted = day?.trim().toLowerCase();
+    const path = wanted
+      ? `/anime/schedule/${encodeURIComponent(wanted)}`
+      : "/anime/schedule";
+
+    const res = await this.malRequest<{ data?: unknown[] }>(path);
+    if (!res.ok) return res;
+
+    const entries: ScheduleEntry[] = [];
+
+    for (const raw of Array.isArray(res.data.data) ? res.data.data : []) {
+      if (!isRecord(raw)) continue;
+
+      const entry = cardFromMal(raw);
+      if (!entry) continue;
+
+      entries.push({
+        ...entry,
+        day: wanted ?? String(raw.day ?? "").toLowerCase(),
+        time: raw.broadcast_time ? String(raw.broadcast_time) : undefined,
+        airingString: raw.broadcast_string ? String(raw.broadcast_string) : undefined,
+      });
+    }
+
+    return { ok: true, data: entries };
+  }
+
+  /** The cast, as characters and the people who voice them. */
+  async cast(malId: string | number): Promise<Result<CastMember[]>> {
+    const res = await this.malRequest<{ data?: unknown[] }>(
+      `/anime/${encodeURIComponent(String(malId))}/characters`,
+    );
+    if (!res.ok) return res;
+
+    const members: CastMember[] = [];
+
+    for (const raw of Array.isArray(res.data.data) ? res.data.data : []) {
+      if (!isRecord(raw)) continue;
+
+      const character = isRecord(raw.character) ? raw.character : undefined;
+      const name = character?.name ? String(character.name) : "";
+      if (!name) continue;
+
+      const actors = Array.isArray(raw.voice_actors) ? raw.voice_actors : [];
+      const voices: { language: string; name: string; image?: string }[] = [];
+
+      for (const actor of actors) {
+        if (!isRecord(actor)) continue;
+        const person = isRecord(actor.person) ? actor.person : undefined;
+        const actorName = person?.name ? String(person.name) : "";
+        if (!actorName) continue;
+
+        voices.push({
+          language: actor.language ? String(actor.language) : "Unknown",
+          name: actorName,
+          image: person?.images?.jpg?.image_url
+            ? String(person.images.jpg.image_url)
+            : undefined,
+        });
+      }
+
+      members.push({
+        name,
+        actor: voices[0]?.name,
+        image: character?.images?.jpg?.image_url
+          ? String(character.images.jpg.image_url)
+          : undefined,
+        role: character?.role ? String(character.role) : undefined,
+        voiceActors: voices.length > 0 ? voices : undefined,
+      });
+    }
+
+    return { ok: true, data: members };
+  }
+
+  /** The other seasons in the same franchise. */
+  async seasons(malId: string | number): Promise<Result<SeasonRelation[]>> {
+    const res = await this.malRequest<{ data?: unknown[] }>(
+      `/anime/${encodeURIComponent(String(malId))}/relations`,
+    );
+    if (!res.ok) return res;
+
+    const relations: SeasonRelation[] = [];
+
+    for (const raw of Array.isArray(res.data.data) ? res.data.data : []) {
+      if (!isRecord(raw)) continue;
+
+      const relation = raw.relation ? String(raw.relation) : undefined;
+      const entry = isRecord(raw.entry) ? raw.entry : undefined;
+      if (!entry) continue;
+
+      const id = entry.mal_id ? String(entry.mal_id) : "";
+      const title = entry.title ? String(entry.title) : "";
+      if (!id || !title) continue;
+
+      relations.push({
+        id,
+        title,
+        relation,
+        format: entry.type ? String(entry.type) : undefined,
+        poster: entry.images?.jpg?.image_url ? String(entry.images.jpg.image_url) : undefined,
+      });
+    }
+
+    return { ok: true, data: relations };
+  }
+
+  /** The official trailer, as a YouTube embed URL. */
+  async trailer(malId: string | number): Promise<Result<string | undefined>> {
+    const res = await this.malRequest<{ data?: unknown }>(
+      `/anime/${encodeURIComponent(String(malId))}/full`,
+    );
+    if (!res.ok) return res;
+
+    const trailer = isRecord(res.data.data) ? res.data.data.trailer : undefined;
+    if (!isRecord(trailer)) return { ok: true, data: undefined };
+
+    const embed = trailer.embed_url ? String(trailer.embed_url) : undefined;
+    const youtubeId = trailer.youtube_id ? String(trailer.youtube_id) : undefined;
+
+    if (embed) return { ok: true, data: embed.replace("autoplay=1", "autoplay=0") };
+    if (youtubeId) {
+      return { ok: true, data: `https://www.youtube-nocookie.com/embed/${youtubeId}?rel=0` };
+    }
+    return { ok: true, data: undefined };
+  }
+
+  /**
+   * Fill in the parts of a detail page that the site does not carry.
+   *
+   * The cast, the other seasons and the trailer all come from Jikan, keyed by
+   * the MAL id the detail page already knows. Nothing here is allowed to
+   * fail the detail page: a missing trailer is a missing trailer, not a
+   * broken screen.
+   */
+  async enrichDetailsWithMalAndCatalog(
+    details: AnimeDetails,
+  ): Promise<Result<AnimeDetails>> {
+    const malId = details.malId;
+    if (!malId) return { ok: true, data: details };
+
+    const [cast, seasons, trailer] = await Promise.all([
+      this.cast(malId).catch(() => ({ ok: false, error: "cast unavailable" }) as const),
+      this.seasons(malId).catch(() => ({ ok: false, error: "seasons unavailable" }) as const),
+      this.trailer(malId).catch(() => ({ ok: false, error: "trailer unavailable" }) as const),
+    ]);
+
+    const enriched: AnimeDetails = { ...details };
+
+    if (cast.ok && cast.data.length > 0) enriched.cast = cast.data;
+    if (seasons.ok && seasons.data.length > 0) {
+      enriched.seasons = reorderAndRenameRails(seasons.data);
+    }
+    if (trailer.ok && trailer.data) {
+      enriched.trailerEmbedUrl = trailer.data;
+      const match = /embed\/([\w-]+)/.exec(trailer.data);
+      if (match?.[1]) enriched.trailerYoutubeId = match[1];
+    }
+
+    return { ok: true, data: enriched };
   }
 
   // ------------------------------------------------------------------ detail
@@ -1051,6 +1283,102 @@ function collectRails(html: string): Rail[] {
   }
 
   return rails;
+}
+
+/**
+ * A card from a Jikan entry.
+ *
+ * The id is the MAL id, because that is what the detail page needs to look up
+ * the rest of the information.
+ */
+function cardFromMal(raw: Record<string, any>): AnimeCard | undefined {
+  const id = raw.mal_id ? String(raw.mal_id) : "";
+  const title = raw.title ? String(raw.title) : "";
+  if (!id || !title) return undefined;
+
+  const card: AnimeCard = {
+    id,
+    title,
+    poster: raw.images?.jpg?.image_url ? String(raw.images.jpg.image_url) : "",
+    format: raw.type ? String(raw.type) : undefined,
+    episodes: raw.episodes ? Number(raw.episodes) : undefined,
+    score: raw.score ? String(raw.score) : undefined,
+    popularity: raw.members ? Number(raw.members) : undefined,
+    description: raw.synopsis ? String(raw.synopsis) : undefined,
+  };
+
+  const genres = Array.isArray(raw.genres)
+    ? raw.genres.map((genre: unknown) => (isRecord(genre) ? String(genre.name ?? "") : ""))
+    : [];
+  const cleaned = genres.filter((genre: string) => genre.length > 0);
+  if (cleaned.length > 0) card.genres = cleaned;
+
+  const studios = Array.isArray(raw.studios)
+    ? raw.studios.map((studio: unknown) => (isRecord(studio) ? String(studio.name ?? "") : ""))
+    : [];
+  const namedStudios = studios.filter((studio: string) => studio.length > 0);
+  if (namedStudios.length > 0) card.studios = namedStudios;
+
+  return card;
+}
+
+/**
+ * The order the franchise's entries should appear in.
+ *
+ * A story reads forwards: the parent story, then the first season, then what
+ * came after. Jikan returns the relations in whatever order the database
+ * has, so they are sorted here.
+ */
+export function reorderAndRenameRails(relations: SeasonRelation[]): SeasonRelation[] {
+  const weight = (relation: string | undefined) => {
+    switch ((relation ?? "").toLowerCase()) {
+      case "parent story":
+      case "prequel":
+        return 0;
+      case "summary":
+        return 1;
+      case "side story":
+      case "alternative version":
+        return 2;
+      case "sequel":
+        return 3;
+      default:
+        return 4;
+    }
+  };
+
+  return [...relations]
+    .map((relation, index) => ({ relation, index }))
+    .sort((a, b) => weight(a.relation.relation) - weight(b.relation.relation) || a.index - b.index)
+    .map((entry) => entry.relation);
+}
+
+/**
+ * Order the recommendations by how much they have in common.
+ *
+ * The site already suggests similar titles, but it does not put the closest
+ * ones first. Sharing a genre is the strongest signal; popularity breaks the
+ * tie, because two titles of the same genre are not equally worth a click.
+ */
+export function rankSimilarByGenresAndPopularity(
+  candidates: AnimeCard[],
+  seed: { genres?: string[]; popularity?: number },
+): AnimeCard[] {
+  const seedGenres = new Set((seed.genres ?? []).map((genre) => genre.toLowerCase()));
+
+  return [...candidates]
+    .map((card, index) => {
+      const shared = (card.genres ?? []).filter((genre) =>
+        seedGenres.has(genre.toLowerCase()),
+      ).length;
+
+      const popularity =
+        (card.popularity ?? 0) - (seed.popularity ?? 0);
+
+      return { card, index, shared, popularity };
+    })
+    .sort((a, b) => b.shared - a.shared || b.popularity - a.popularity || a.index - b.index)
+    .map((entry) => entry.card);
 }
 
 /** A client with the defaults the app uses. */
