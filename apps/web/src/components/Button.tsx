@@ -6,6 +6,12 @@ import type { CSSProperties, ReactNode } from "react";
  * `Brand` is the one gradient-filled action per screen. Everything else is
  * glass. Keeping the count at one is what stops a screen looking like a
  * spotlight for buttons rather than for content.
+ *
+ * Every colour here is a theme variable, not a constant. That is what keeps
+ * the two contrast rules true in both modes:
+ *
+ *   Light Mode  — no dark button with white text;
+ *   Dark Mode   — no white button, and no black text.
  */
 
 type Common = {
@@ -32,14 +38,15 @@ export function BrandButton({ children, onClick, disabled, style, title, type = 
         gap: 8,
         padding: "11px 22px",
         borderRadius: 999,
-        border: "none",
-        backgroundImage: "var(--brand-gradient)",
-        color: "#fff",
+        border: "1px solid var(--btn-brand-border)",
+        backgroundImage: "var(--btn-brand-bg)",
+        backgroundColor: "var(--brand-mid)",
+        color: "var(--btn-brand-text)",
         fontWeight: 700,
         fontSize: 14,
         cursor: disabled ? "not-allowed" : "pointer",
         opacity: disabled ? 0.5 : 1,
-        boxShadow: "0 14px 32px -14px rgba(123,61,255,0.9)",
+        boxShadow: "0 14px 32px -14px var(--btn-brand-shadow)",
         ...style,
       }}
     >
@@ -71,11 +78,11 @@ export function GlassButton({
         gap: 8,
         padding: "10px 18px",
         borderRadius: 999,
-        border: `1px solid ${active ? "rgba(0,123,255,0.55)" : "rgba(255,255,255,0.14)"}`,
-        background: active ? "rgba(0,123,255,0.16)" : "rgba(255,255,255,0.06)",
+        border: `1px solid ${active ? "var(--btn-glass-border-active)" : "var(--btn-glass-border)"}`,
+        background: active ? "var(--btn-glass-bg-active)" : "var(--btn-glass-bg)",
         backdropFilter: "blur(14px) saturate(1.4)",
         WebkitBackdropFilter: "blur(14px) saturate(1.4)",
-        color: "var(--text)",
+        color: "var(--btn-glass-text)",
         fontWeight: 600,
         fontSize: 14,
         cursor: disabled ? "not-allowed" : "pointer",
@@ -115,11 +122,11 @@ export function IconButton({
         display: "grid",
         placeItems: "center",
         borderRadius: 999,
-        border: "1px solid rgba(255,255,255,0.14)",
-        background: "rgba(255,255,255,0.07)",
+        border: "1px solid var(--btn-glass-border)",
+        background: "var(--btn-glass-bg)",
         backdropFilter: "blur(14px)",
         WebkitBackdropFilter: "blur(14px)",
-        color: "var(--text)",
+        color: "var(--btn-glass-text)",
         cursor: "pointer",
         flex: "0 0 auto",
         ...style,
@@ -163,5 +170,19 @@ export const CloseIcon = ({ size = 16 }: { size?: number }) => (
 export const BackIcon = ({ size = 18 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     <path d="M15 5l-7 7 7 7" />
+  </svg>
+);
+
+/** The sun and the moon, for the theme toggle. */
+export const SunIcon = ({ size = 18 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden>
+    <circle cx="12" cy="12" r="4.2" />
+    <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.2 5.2l1.4 1.4M17.4 17.4l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4" />
+  </svg>
+);
+
+export const MoonIcon = ({ size = 18 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.4 8.4 0 1 0 10.2 10.2z" />
   </svg>
 );

@@ -67,6 +67,17 @@ jobs:
       - name: Install
         run: npm ci --no-audit --no-fund
 
+      - name: Check the Electron runtime
+        run: |
+          node -e "
+            const fs = require('node:fs');
+            const path = require('node:path');
+            const dir = path.dirname(require.resolve('electron/package.json'));
+            const file = path.join(dir, 'path.txt');
+            if (!fs.existsSync(file)) throw new Error('the Electron binary was not installed');
+            console.log('electron at', path.join(dir, 'dist', fs.readFileSync(file, 'utf8')));
+          "
+
       - name: Build the web app
         run: npm run build --workspace @anispots/web
 
@@ -76,6 +87,14 @@ jobs:
         env:
           # The build needs no secrets; the release job does.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Explain a failure
+        if: failure()
+        run: |
+          # The build log is not always in the step output, so the dist folder
+          # is listed to show how far it got.
+          ls -la apps/desktop/dist 2>/dev/null || echo "nothing was produced"
+          ls -la node_modules/electron/dist 2>/dev/null | head -5 || echo "no electron dist"
 
       - name: Collect the artefacts
         uses: actions/upload-artifact@v4

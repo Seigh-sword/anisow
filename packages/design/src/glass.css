@@ -54,57 +54,176 @@
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
+/* ------------------------------------------------------------------ themes */
+
+/**
+ * Two modes, one set of names.
+ *
+ * The dark values live on `:root` because dark is the default; the light
+ * values live on `[data-theme="light"]` and override them. Every surface,
+ * border and button reads a variable, so switching modes is one attribute
+ * change and nothing else has to move.
+ *
+ * The two contrast rules this file has to keep:
+ *
+ *   Light Mode  — no dark button with white text.
+ *   Dark Mode   — no white button, and no black text.
+ *
+ * The brand gradient buttons are the one thing that stays the same in both
+ * modes: they are the primary action, and their colours are dark enough in
+ * Light Mode to carry white text without becoming an unreadable white block.
+ */
+
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --page-bg: #07080e;
+  --page-bg-soft: #0b0d16;
+
+  --text: #f7f9ff;
+  --text-muted: #a7b0c6;
+  --text-faint: #6e7789;
+  --text-on-brand: #ffffff;
+
+  /* The primary action: the brand gradient, with white text. */
+  --btn-brand-bg: var(--brand-gradient);
+  --btn-brand-text: #ffffff;
+  --btn-brand-border: transparent;
+  --btn-brand-shadow: rgba(0, 123, 255, 0.4);
+
+  /* The secondary action: glass, with light text. */
+  --btn-glass-bg: rgba(255, 255, 255, 0.07);
+  --btn-glass-bg-active: rgba(255, 255, 255, 0.13);
+  --btn-glass-border: rgba(255, 255, 255, 0.16);
+  --btn-glass-border-active: rgba(255, 255, 255, 0.28);
+  --btn-glass-text: #f7f9ff;
+
+  --surface-pill: rgba(255, 255, 255, 0.07);
+  --surface-pill-active: rgba(255, 255, 255, 0.14);
+  --surface-raised: #11141f;
+  --surface-sunken: #0b0d16;
+
+  --stroke-subtle: rgba(255, 255, 255, 0.1);
+  --stroke-strong: rgba(255, 255, 255, 0.18);
+
+  --backdrop-wash: rgba(7, 8, 14, 0.72);
+  --glass-fill-default: rgba(255, 255, 255, 0.07);
+  --glass-fill-subtle: rgba(255, 255, 255, 0.045);
+  --glass-fill-strong: rgba(10, 12, 20, 0.55);
+  --glass-fill-floating: rgba(12, 14, 22, 0.78);
+
+  --shadow-soft: rgba(0, 0, 0, 0.45);
+  --shadow-strong: rgba(0, 0, 0, 0.65);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --page-bg: #eef1f8;
+  --page-bg-soft: #e4e9f4;
+
+  --text: #12141c;
+  --text-muted: #4d5568;
+  --text-faint: #767f94;
+  --text-on-brand: #ffffff;
+
+  /* Still the brand gradient: dark enough to carry white text. */
+  --btn-brand-bg: var(--brand-gradient);
+  --btn-brand-text: #ffffff;
+  --btn-brand-border: transparent;
+  --btn-brand-shadow: rgba(0, 123, 255, 0.32);
+
+  /* Glass buttons: a light tint with dark text. */
+  --btn-glass-bg: rgba(255, 255, 255, 0.72);
+  --btn-glass-bg-active: rgba(255, 255, 255, 0.95);
+  --btn-glass-border: rgba(18, 20, 28, 0.14);
+  --btn-glass-border-active: rgba(18, 20, 28, 0.26);
+  --btn-glass-text: #12141c;
+
+  --surface-pill: rgba(255, 255, 255, 0.68);
+  --surface-pill-active: rgba(255, 255, 255, 0.95);
+  --surface-raised: #ffffff;
+  --surface-sunken: #e7ebf4;
+
+  --stroke-subtle: rgba(18, 20, 28, 0.1);
+  --stroke-strong: rgba(18, 20, 28, 0.18);
+
+  --backdrop-wash: rgba(238, 241, 248, 0.78);
+  --glass-fill-default: rgba(255, 255, 255, 0.62);
+  --glass-fill-subtle: rgba(255, 255, 255, 0.42);
+  --glass-fill-strong: rgba(255, 255, 255, 0.82);
+  --glass-fill-floating: rgba(255, 255, 255, 0.9);
+
+  --shadow-soft: rgba(18, 20, 28, 0.12);
+  --shadow-strong: rgba(18, 20, 28, 0.2);
+}
+
+/**
+ * The body and the page.
+ *
+ * The background is a gradient rather than a flat colour, because a flat one
+ * makes the glass panels look like stickers on a wall.
+ */
+body {
+  background: var(--page-bg);
+  color: var(--text);
+  transition:
+    background-color 0.3s var(--ease-out),
+    color 0.3s var(--ease-out);
+}
+
 /* ---------------------------------------------------------------- surfaces */
 
 .glass {
   position: relative;
-  background: var(--glass-fill, rgba(255, 255, 255, 0.07));
-  border: 1px solid var(--glass-stroke, rgba(255, 255, 255, 0.14));
+  background: var(--glass-fill, var(--glass-fill-default));
+  border: 1px solid var(--glass-stroke, var(--stroke-subtle));
   border-radius: var(--r-lg);
   box-shadow:
-    0 1px 0 0 var(--glass-stroke-bright, rgba(255, 255, 255, 0.3)) inset,
-    0 18px 40px -20px var(--glass-shadow, rgba(0, 0, 0, 0.45));
+    0 1px 0 0 var(--glass-stroke-bright, var(--stroke-strong)) inset,
+    0 18px 40px -20px var(--glass-shadow, var(--shadow-soft));
   backdrop-filter: blur(var(--glass-blur, 20px)) saturate(var(--glass-saturation, 1.35));
   -webkit-backdrop-filter: blur(var(--glass-blur, 20px)) saturate(var(--glass-saturation, 1.35));
 }
 
 .glass--subtle {
-  --glass-fill: rgba(255, 255, 255, 0.045);
-  --glass-stroke: rgba(255, 255, 255, 0.1);
-  --glass-stroke-bright: rgba(255, 255, 255, 0.22);
+  --glass-fill: var(--glass-fill-subtle);
+  --glass-stroke: var(--stroke-subtle);
+  --glass-stroke-bright: var(--stroke-strong);
   --glass-blur: 12px;
   --glass-saturation: 1.2;
 }
 
 .glass--strong {
-  --glass-fill: rgba(10, 12, 20, 0.55);
-  --glass-stroke: rgba(255, 255, 255, 0.16);
-  --glass-stroke-bright: rgba(255, 255, 255, 0.34);
+  --glass-fill: var(--glass-fill-strong);
+  --glass-stroke: var(--stroke-strong);
+  --glass-stroke-bright: var(--stroke-strong);
   --glass-blur: 28px;
   --glass-saturation: 1.5;
-  --glass-shadow: rgba(0, 0, 0, 0.55);
+  --glass-shadow: var(--shadow-strong);
 }
 
 .glass--floating {
-  --glass-fill: rgba(12, 14, 22, 0.78);
-  --glass-stroke: rgba(255, 255, 255, 0.18);
-  --glass-stroke-bright: rgba(255, 255, 255, 0.38);
+  --glass-fill: var(--glass-fill-floating);
+  --glass-stroke: var(--stroke-strong);
+  --glass-stroke-bright: var(--stroke-strong);
   --glass-blur: 36px;
   --glass-saturation: 1.6;
-  --glass-shadow: rgba(0, 0, 0, 0.65);
+  --glass-shadow: var(--shadow-strong);
 }
 
 /* No backdrop filter: lean on opacity so contrast survives. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass,
   .glass--subtle {
-    --glass-fill: rgba(16, 19, 29, 0.9);
+    --glass-fill: var(--surface-raised);
   }
   .glass--strong {
-    --glass-fill: rgba(10, 12, 20, 0.94);
+    --glass-fill: var(--surface-raised);
   }
   .glass--floating {
-    --glass-fill: rgba(12, 14, 22, 0.97);
+    --glass-fill: var(--surface-raised);
   }
 }
 
@@ -269,7 +388,7 @@
   aspect-ratio: 2 / 3;
   border-radius: var(--r-md);
   overflow: hidden;
-  background: var(--ink-raised);
+  background: var(--surface-raised);
   isolation: isolate;
 }
 
@@ -293,4 +412,70 @@
   height: 52%;
   background: linear-gradient(to top, rgba(4, 5, 10, 0.92), transparent);
   pointer-events: none;
+}
+
+/**
+ * The poster card.
+ *
+ * The hover lifts the card and fades in the description. Both are compositor
+ * properties, so a rail of two dozen posters does not repaint when the mouse
+ * crosses it — only the layer under the cursor is redrawn.
+ */
+.poster-card {
+  position: relative;
+  transform: translate3d(0, 0, 0);
+  transition:
+    transform 0.28s var(--ease-out),
+    box-shadow 0.28s var(--ease-out);
+  will-change: transform;
+}
+
+.poster-card:hover {
+  transform: translate3d(0, -4px, 0);
+  box-shadow: 0 26px 50px -24px var(--shadow-strong);
+}
+
+/**
+ * The description that appears over the artwork.
+ *
+ * It sits over a black-to-transparent gradient that covers only the lower
+ * part of the cover, so the artwork stays visible. The text is white in both
+ * themes, which is correct in both: the gradient behind it is always dark,
+ * whatever the page behind it is doing.
+ */
+.poster-hover-desc {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: var(--s-md) var(--s-sm) var(--s-sm);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.96) 0%, rgba(0, 0, 0, 0.82) 45%, transparent 100%);
+  color: #ffffff;
+  font-size: 11px;
+  line-height: 1.35;
+  opacity: 0;
+  transform: translate3d(0, 8px, 0);
+  transition:
+    opacity 0.26s var(--ease-out),
+    transform 0.26s var(--ease-out);
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+
+.poster-card:hover .poster-hover-desc,
+.poster-card:focus-within .poster-hover-desc {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+/**
+ * A screen reader should hear the description even when it is not visible,
+ * so it is not `display: none` — only transparent.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .poster-card,
+  .poster-hover-desc {
+    transition: none !important;
+  }
+  .poster-card:hover {
+    transform: none;
+  }
 }
